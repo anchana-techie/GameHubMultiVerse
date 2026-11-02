@@ -1,0 +1,45 @@
+rules_version = '2';
+// Game Hub – publish these in Firebase console > Firestore Database > Rules.
+// Keep the admin e-mail below identical to adminEmail in firebase-config.js.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function mail()     { return request.auth.token.email.lower(); }
+    function verified() { return request.auth.token.email_verified == true; }
+    function isAdmin()  { return signedIn() && verified() && mail() == 'admin@gamehubverse.com'; }
+    function inviteOf(e) { return get(/databases/$(database)/documents/invites/$(e)).data; }
+
+    // Invites: the admin manages them. Anyone may look up ONE invite by e-mail (needed to check an address before registering).
+    match /invites/{email} {
+      allow get: if true;
+      allow list, create, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (signedIn() && verified() && email == mail()
+            && resource.data.status == 'invited'
+            && request.resource.data.status == 'registered'
+            && request.resource.data.uid == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'uid', 'registeredAt', 'name']));
+    }
+
+    // Profiles: a person can create their own ONLY if their e-mail is invited (the admin account is the exception).
+    match /users/{uid} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow create: if signedIn() && verified() && request.auth.uid == uid
+        && request.resource.data.email == mail()
+        && request.resource.data.role == (isAdmin() ? 'admin' : 'user')
+        && (isAdmin() || inviteOf(mail()).status == 'invited');
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.email == resource.data.email;
+      allow delete: if isAdmin();
+
+      match /activity/{id} {
+        allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+        allow create: if signedIn() && request.auth.uid == uid
+          && exists(/databases/$(database)/documents/users/$(uid));
+        allow delete: if isAdmin();
+      }
+    }
+  }
+}

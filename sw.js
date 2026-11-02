@@ -2,9 +2,9 @@
    - Pages: network first, then the saved copy, then offline.html.
    - Libraries / fonts / same-origin files: served from the saved copy and refreshed in the background.
    - Never touches the PeerJS signalling server, EmailJS or connectivity probes. */
-const VERSION = "gamehub-v3";
+const VERSION = "gamehub-v4";
 const SHELL = ["index.html", "offline.html", "404.html"];
-const CDN_OK = ["unpkg.com", "cdn.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com"];
+const CDN_OK = ["www.gstatic.com", "unpkg.com", "cdn.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com"];
 
 self.addEventListener("install", e => {
   e.waitUntil(

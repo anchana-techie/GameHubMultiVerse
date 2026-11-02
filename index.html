@@ -598,6 +598,23 @@
   .db-sum{font-size:1.6rem;font-weight:800;color:var(--warn)}
   .db-roll{font-size:1.15rem;padding:14px}
   /* ludo */
+  /* accounts + admin */
+  .acct-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;margin-bottom:6px}
+  .adm-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}
+  .adm-card{background:#ffffff0d;border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:2px}
+  .adm-card b{font-size:1.35rem}.adm-card span{font-size:.78rem;color:var(--muted)}
+  .adm-tw{overflow-x:auto;margin-top:10px}
+  .adm-t{width:100%;border-collapse:collapse;font-size:.88rem}
+  .adm-t th{text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--border);white-space:nowrap}
+  .adm-t td{padding:8px;border-bottom:1px solid #ffffff12;vertical-align:top}
+  .adm-t tr.removed td{opacity:.55}
+  .adm-det td{background:#ffffff08}
+  .adm-name{background:none;border:0;color:inherit;font:inherit;cursor:pointer;padding:0;text-align:left}
+  .adm-name:disabled{cursor:default}
+  .adm-ac{white-space:nowrap}.adm-ac .btn{padding:5px 10px;font-size:.8rem}
+  .adm-pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.75rem;font-weight:700;border:1px solid #ffffff33}
+  .adm-pill.on{color:#46d6a4;border-color:#46d6a4}.adm-pill.ok{color:#9fd2ff}.adm-pill.wait{color:#ffd25e;border-color:#ffd25e88}.adm-pill.off{color:#ff7b8b}
+  .adm-act{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:.85rem}
   .lu-play{display:flex;gap:18px;align-items:center;justify-content:center;margin:14px 0}
   .lu-play .lu-wrap{flex:1 1 0;min-width:0;max-width:640px;margin:0}
   .lu-side{flex:0 0 230px;display:flex;flex-direction:column;gap:10px;align-items:stretch}
@@ -714,6 +731,7 @@
   <h1>Launching Game Hub…</h1><p id="sysSub">Starting up…</p><div class="sys-bar"><i id="sysBar" style="width:6%"></i></div>
   <noscript><p>Game Hub needs JavaScript. Please enable it and reload the page.</p></noscript></div></div></div>
 
+<script src="firebase-config.js"></script>
 <script>
 /* ================= CONSTANTS & HELPERS ================= */
 const EMOJIS = ["🐒","🐷","🦁","🐼","🐸","🦊","🐯","🐶","🦆"];
@@ -924,6 +942,7 @@ function clearSession(){ try{ sessionStorage.removeItem("ngg_room"); }catch(e){}
 function getSession(){ try{ return JSON.parse(sessionStorage.getItem("ngg_room")); }catch(e){ return null; } }
 
 function setRoom(v,off){
+  try{ trackRoom(v); }catch(e){ console.error(e); }
   S.room=v; S.off=off||0; S.screen="room";
   ejCheck(v);                                   // ejection cutscene (if this state carries a new one)
   roleCheck(v);                                 // secret-role screen at the start of each round
@@ -2602,6 +2621,7 @@ function modalYes(){
   if(a==="exitgame") sendAct({a:"tolobby"});
   else if(a==="kick"&&m.pid) sendAct({a:"kick",pid:m.pid});
   else if(a==="chresign") sendAct({a:"resign"});
+  else if(a==="fbremove"&&m.key) admRemove(m.key);
   else if(a==="closeroom") leaveRoom(true);
   else if(a==="leaveroom") leaveRoom(true);
 }
@@ -2844,7 +2864,7 @@ function topbar(title,home){
   return `<div class="topbar"><h1 class="title">${title}</h1><div style="display:flex;gap:8px">${home?`<button class="btn secondary" data-a="home">🏠 Home</button>`:""}</div></div>`;
 }
 function landingHTML(){
-  let h=`<header class="hero"><h1>Game Hub</h1><p>Open a room, share the code, and play with friends.</p></header>`;
+  let h=acctBarHTML()+`<header class="hero"><h1>Game Hub</h1><p>Open a room, share the code, and play with friends.</p></header>`;
   if(S.notice) h+=`<div class="msg ${S.notice.type}">${esc(S.notice.text)}</div>`;
   h+=`<h3>Play online with a room code</h3><div class="game-grid g3">
     <button class="game-btn" data-a="go" data-g="number"><span class="ico">🎯</span><b>NumberGame</b><span class="d">Guess the secret number in turns. Rounds, timers and attempts are set per room.</span><span class="offb">📴 works offline</span></button>
@@ -3334,7 +3354,10 @@ function rpsGameHTML(v){
 }
 
 function mainHTML(){
+  const gate=authGate(); if(gate) return gate;
   switch(S.screen){
+    case "admin": return AUTH.isAdmin?topbar("🛡 Admin – people & activity",true)+adminHTML():landingHTML();
+    case "mystats": return topbar("📊 My activity",true)+myStatsHTML();
     case "xmas": return topbar("🎄 ChristMom ChristChild",true)+xmasHTML();
     case "diwali": return topbar("🪔 Diwali Daddy Diwali Kid",true)+dwHTML();
     case "entry": return entryHTML();
@@ -3848,6 +3871,7 @@ function buildSpace(){
 }
 
 function render(){
+  try{ fbAdminSync(); trackSweep(); }catch(e){ console.error(e); }
   try{ renderMain(); }catch(e){ sysReport(e,"game"); }
   try{ renderSys(); }catch(e){ console.error(e); }
 }
@@ -3930,6 +3954,23 @@ function onAppClick(e){
   const t=e.target.closest("[data-a]"); if(!t||t.disabled) return;
   switch(t.dataset.a){
     case "home": goHome(); break;
+    case "authMode": AUTH.mode=t.dataset.mode; AUTH.err=null; AUTH.info=null; render(); break;
+    case "authLogin": doAuthLogin(); break;
+    case "authRegister": doAuthRegister(); break;
+    case "authReset": doAuthReset(); break;
+    case "authRecheck": doAuthRecheck(); break;
+    case "authResend": doAuthResend(); break;
+    case "authLogout": doAuthLogout(); break;
+    case "authRetry": fbInit(); break;
+    case "goAdmin": S.notice=null; S.screen="admin"; render(); break;
+    case "goMyStats": S.notice=null; S.screen="mystats"; AUTH.my.act=null; render(); if(AUTH.user&&FBD) admLoadAct(AUTH.user.uid,AUTH.my,"act"); break;
+    case "admInvite": admInvite(); break;
+    case "admToggle": { const k=t.dataset.key, u=Object.values(AUTH.adm.users).find(x=>x.email===k); AUTH.adm.open=AUTH.adm.open===k?null:k; render(); if(AUTH.adm.open&&u) admLoadAct(u.id,AUTH.adm.act,u.id); break; }
+    case "admRemove": { const k=t.dataset.key, has=Object.values(AUTH.adm.users).some(x=>x.email===k);
+      showModal({title:has?"Remove this account?":"Revoke this invite?",text:has?k+" will be signed out of Game Hub, lose their history and can't register again unless you invite them again.":k+" will no longer be able to register.",ok:has?"Remove account":"Revoke invite",danger:true,act:"fbremove",key:k}); break; }
+    case "admReinvite": admReinvite(t.dataset.key); break;
+    case "admMail": admMail(t.dataset.key); break;
+    case "admCopy": try{ navigator.clipboard.writeText("You're invited to Game Hub: "+admLink()+" – choose Register and use "+t.dataset.key); toast("Invite message copied – paste it to them.","ok"); }catch(x){ toast(admLink(),"info"); } break;
     case "go": S.notice=null; S.game=t.dataset.g; S.screen="entry"; render(); break;
     case "goJoin": S.notice=null; S.game=null; S.screen="entry"; render(); break;
     case "goXmas": S.notice=null; S.screen="xmas"; render(); break;
@@ -3987,6 +4028,7 @@ function onAppInput(e){
   if(t.dataset&&t.dataset.keep!==undefined&&t.id){
     if(t.id==="guess"){ const c=t.value.replace(/\D/g,""); if(c!==t.value) t.value=c; }
     S.ui[t.id]=t.value;
+    if(t.id==="admQ") render();
   }
 }
 function onAppKey(e){
@@ -3996,6 +4038,9 @@ function onAppKey(e){
   else if(id==="guess") doGuess();
   else if(id==="skChat") doSkChat();
   else if(id==="joinCode") joinRoom(S.ui.joinCode||"");
+  else if(id==="authEmail"||id==="authPass"){ if(AUTH.mode==="login") doAuthLogin(); else if(AUTH.mode==="forgot") doAuthReset(); }
+  else if(id==="authPass2") doAuthRegister();
+  else if(id==="admEmail"||id==="admName") admInvite();
 }
 
 
@@ -4427,10 +4472,313 @@ function createLocalRoom(game,solo){
   clearHash(); pushState();
 }
 
+/* ================= FIREBASE: accounts, invites, admin view =================
+   Keys live in firebase-config.js. Without them the hub runs exactly as before (no login).
+   - Only e-mails the admin has invited (invites/{email}) can register; the rules in firestore.rules enforce it, the app also checks first.
+   - New accounts must verify their e-mail (stops someone grabbing an invited address).
+   - Each signed-in player records their own logins, games and play time under users/{uid}; the admin reads everything.
+   - Removing an account deletes the profile + activity and marks the invite "removed"; the old sign-in record is deleted at that person's next sign-in. */
+const FBC=(window.GH_FIREBASE&&window.GH_FIREBASE.config)||{};
+const ADMIN_EMAIL=String((window.GH_FIREBASE&&window.GH_FIREBASE.adminEmail)||"admin@gamehubverse.com").toLowerCase();
+const FB_ON=!!(FBC.apiKey&&FBC.projectId&&!/^(YOUR_|PASTE)/i.test(FBC.apiKey));
+const FB_SDK="https://www.gstatic.com/firebasejs/10.12.2/firebase-";
+const AUTH={on:FB_ON,state:FB_ON?"loading":"off",user:null,profile:null,isAdmin:false,err:null,info:null,busy:false,mode:"login",pendingName:"",
+  hb:null,unSelf:null,adm:{invites:[],users:{},open:null,act:{},subs:[],err:null},my:{act:null,loading:false}};
+let FBA=null, FBD=null;
+const fbNow=()=>firebase.firestore.FieldValue.serverTimestamp();
+const fbInc=n=>firebase.firestore.FieldValue.increment(n);
+const fbMs=t=>t&&t.toMillis?t.toMillis():(typeof t==="number"?t:0);
+const fbAgo=ms=>{ if(!ms) return "never"; const s=Math.max(0,(Date.now()-ms)/1000); if(s<60) return "just now"; if(s<3600) return Math.floor(s/60)+" min ago"; if(s<86400) return Math.floor(s/3600)+" h ago"; return Math.floor(s/86400)+" d ago"; };
+const fbDate=ms=>ms?new Date(ms).toLocaleString([],{dateStyle:"medium",timeStyle:"short"}):"–";
+const fbDur=s=>{ s=Math.round(s||0); if(s<60) return s+"s"; if(s<3600) return Math.floor(s/60)+"m"; return Math.floor(s/3600)+"h "+Math.floor(s%3600/60)+"m"; };
+const fbOnline=u=>!!(u&&u.online&&Date.now()-fbMs(u.lastSeen)<150000);
+function fbDevice(){
+  const ua=navigator.userAgent||"", b=/Edg\//.test(ua)?"Edge":/OPR\//.test(ua)?"Opera":/Firefox\//.test(ua)?"Firefox":/Chrome\//.test(ua)?"Chrome":/Safari\//.test(ua)?"Safari":"Browser";
+  const o=/Windows/.test(ua)?"Windows":/Android/.test(ua)?"Android":/iPhone|iPad/.test(ua)?"iOS":/Mac OS/.test(ua)?"macOS":/Linux/.test(ua)?"Linux":"";
+  return b+(o?" · "+o:"")+(/Mobi/.test(ua)?" · mobile":"");
+}
+function fbErrText(e){
+  const c=e&&e.code||"";
+  return ({"auth/invalid-credential":"Wrong e-mail or password.","auth/wrong-password":"Wrong e-mail or password.","auth/user-not-found":"Wrong e-mail or password.","auth/invalid-email":"That e-mail address doesn't look right.",
+    "auth/email-already-in-use":"This e-mail already has an account – use Sign in (or Forgot password).","auth/weak-password":"Choose a password of at least 6 characters.","auth/too-many-requests":"Too many tries – wait a few minutes and try again.",
+    "auth/network-request-failed":"No connection – check your internet.","permission-denied":"Not allowed (check the Firestore rules are published)."})[c]||(e&&e.message)||"Something went wrong.";
+}
+async function fbInit(){
+  if(!FB_ON||FBA) return;
+  AUTH.state="loading"; render();
+  try{
+    for(const n of ["app","auth","firestore"]) if(!(await loadScript(FB_SDK+n+"-compat.js",12000))) throw new Error("Couldn't load Firebase.");
+    if(!firebase.apps.length) firebase.initializeApp(FBC);
+    FBA=firebase.auth(); FBD=firebase.firestore();
+  }catch(e){ AUTH.state=ONLINE?"error":"offline"; render(); return; }
+  FBA.onAuthStateChanged(u=>fbOnUser(u));
+}
+function fbStop(){
+  clearInterval(AUTH.hb); AUTH.hb=null;
+  if(AUTH.unSelf){ try{ AUTH.unSelf(); }catch(e){} AUTH.unSelf=null; }
+  AUTH.adm.subs.forEach(f=>{ try{ f(); }catch(e){} }); AUTH.adm.subs=[]; AUTH.adm.invites=[]; AUTH.adm.users={};
+}
+async function fbReject(u,why){
+  AUTH.err=why==="removed"?"This account was removed by the admin. Ask them to invite you again.":"This e-mail hasn't been invited. Ask the admin to invite you first.";
+  try{ await u.delete(); }catch(e){ try{ await FBA.signOut(); }catch(x){} }
+}
+async function fbOnUser(u){
+  if(!u){ fbStop(); AUTH.user=null; AUTH.profile=null; AUTH.isAdmin=false; AUTH.state="out"; AUTH.busy=false; render(); return; }
+  AUTH.user=u; AUTH.isAdmin=(u.email||"").toLowerCase()===ADMIN_EMAIL;
+  if(!u.emailVerified){ AUTH.state="verify"; AUTH.busy=false; render(); return; }
+  AUTH.state="loading"; render();
+  try{
+    const email=u.email.toLowerCase(), ref=FBD.collection("users").doc(u.uid), tag="gh_login_"+u.uid;
+    let snap=await ref.get(), first=false;
+    if(!snap.exists){
+      if(!AUTH.isAdmin){
+        const is=await FBD.collection("invites").doc(email).get(), inv=is.exists?is.data():null;
+        if(!inv||inv.status!=="invited") return fbReject(u,inv&&inv.status);
+      }
+      const name=String(AUTH.pendingName||u.displayName||email.split("@")[0]).slice(0,30);
+      await ref.set({email,name,role:AUTH.isAdmin?"admin":"user",createdAt:fbNow(),lastLoginAt:fbNow(),lastSeen:fbNow(),online:true,loginCount:1,device:fbDevice(),stats:{},gamesPlayed:0,totalSeconds:0});
+      if(!AUTH.isAdmin) await FBD.collection("invites").doc(email).update({status:"registered",uid:u.uid,registeredAt:fbNow(),name});
+      first=true; try{ sessionStorage.setItem(tag,"1"); }catch(e){}
+      fbLogTo(u.uid,"login",{first:true,device:fbDevice()});
+    } else {
+      let seen=false; try{ seen=!!sessionStorage.getItem(tag); }catch(e){}
+      if(!seen){
+        try{ sessionStorage.setItem(tag,"1"); }catch(e){}
+        await ref.update({lastLoginAt:fbNow(),lastSeen:fbNow(),online:true,loginCount:fbInc(1),device:fbDevice()});
+        fbLogTo(u.uid,"login",{device:fbDevice()});
+      } else ref.update({lastSeen:fbNow(),online:true}).catch(()=>{});
+    }
+    snap=await ref.get(); AUTH.profile=snap.data()||{name:u.displayName||email,email};
+    AUTH.err=null; AUTH.state="in"; AUTH.pendingName="";
+    if(S&&!S.me.name){ S.me.name=String(AUTH.profile.name||"").slice(0,16); try{ if(!localStorage.getItem("ngg_me")) localStorage.setItem("ngg_me",JSON.stringify({name:S.me.name,av:S.me.av})); }catch(e){} }
+    fbStart(u,ref);
+  }catch(e){
+    if(!ONLINE||(e&&/unavailable|offline/i.test(e.code||e.message||""))){ AUTH.state="offline"; AUTH.profile=null; }
+    else { AUTH.err=fbErrText(e); try{ await FBA.signOut(); }catch(x){} }
+  }
+  AUTH.busy=false; render();
+}
+function fbStart(u,ref){
+  fbStop();
+  AUTH.unSelf=ref.onSnapshot(s=>{
+    if(!s.exists&&AUTH.state==="in"&&!AUTH.isAdmin&&!s.metadata.fromCache){ AUTH.err="Your account was removed by the admin."; u.delete().catch(()=>{}); FBA.signOut().catch(()=>{}); }
+    else if(s.exists) AUTH.profile=s.data();
+  },()=>{});
+  AUTH.hb=setInterval(()=>{ if(document.visibilityState==="visible") ref.update({lastSeen:fbNow(),online:true}).catch(()=>{}); },60000);
+}
+document.addEventListener("visibilitychange",()=>{ if(AUTH.state==="in"&&FBD&&AUTH.user) FBD.collection("users").doc(AUTH.user.uid).update({online:document.visibilityState==="visible",lastSeen:fbNow()}).catch(()=>{}); });
+window.addEventListener("pagehide",()=>{ try{ trackEnd("left",null); if(AUTH.state==="in"&&FBD&&AUTH.user) FBD.collection("users").doc(AUTH.user.uid).update({online:false,lastSeen:fbNow()}).catch(()=>{}); }catch(e){} });
+function fbLogTo(uid,type,data){ try{ FBD.collection("users").doc(uid).collection("activity").add(Object.assign({type,at:fbNow()},data)).catch(()=>{}); }catch(e){} }
+
+/* ---- sign in / register / reset ---- */
+const authVal=id=>String(S.ui[id]!==undefined?S.ui[id]:"").trim();
+async function doAuthLogin(){
+  const email=authVal("authEmail").toLowerCase(), pass=String(S.ui.authPass||"");
+  if(!email||!pass){ AUTH.err="Enter your e-mail and password."; return render(); }
+  AUTH.busy=true; AUTH.err=null; AUTH.info=null; render();
+  try{ await FBA.signInWithEmailAndPassword(email,pass); }catch(e){ AUTH.err=fbErrText(e); AUTH.busy=false; render(); }
+}
+async function doAuthRegister(){
+  const name=authVal("authName").slice(0,30), email=authVal("authEmail").toLowerCase(), p1=String(S.ui.authPass||""), p2=String(S.ui.authPass2||"");
+  if(!name||!email||!p1) { AUTH.err="Fill in your name, e-mail and a password."; return render(); }
+  if(p1!==p2){ AUTH.err="The two passwords don't match."; return render(); }
+  AUTH.busy=true; AUTH.err=null; AUTH.info=null; render();
+  try{
+    if(email!==ADMIN_EMAIL){
+      const d=await FBD.collection("invites").doc(email).get();
+      if(!d.exists||d.data().status!=="invited"){ AUTH.err="This e-mail hasn't been invited. Ask the admin to invite you first."; AUTH.busy=false; return render(); }
+    }
+    AUTH.pendingName=name;
+    const cred=await FBA.createUserWithEmailAndPassword(email,p1);
+    try{ await cred.user.updateProfile({displayName:name}); await cred.user.sendEmailVerification(); }catch(e){}
+  }catch(e){ AUTH.err=fbErrText(e); AUTH.busy=false; render(); }
+}
+async function doAuthReset(){
+  const email=authVal("authEmail").toLowerCase(); if(!email){ AUTH.err="Type your e-mail first."; return render(); }
+  try{ await FBA.sendPasswordResetEmail(email); AUTH.err=null; AUTH.info="If that e-mail has an account, a reset link is on its way."; }catch(e){ AUTH.err=fbErrText(e); }
+  render();
+}
+async function doAuthRecheck(){
+  AUTH.busy=true; render();
+  try{ await FBA.currentUser.reload(); await FBA.currentUser.getIdToken(true); }catch(e){}
+  AUTH.busy=false;
+  if(FBA.currentUser&&FBA.currentUser.emailVerified) fbOnUser(FBA.currentUser); else { AUTH.info="Not verified yet – open the link in the e-mail we sent, then press the button again."; render(); }
+}
+async function doAuthResend(){
+  try{ await FBA.currentUser.sendEmailVerification(); AUTH.info="Verification e-mail sent again."; AUTH.err=null; }catch(e){ AUTH.err=fbErrText(e); }
+  render();
+}
+function doAuthLogout(){
+  try{ if(NET&&NET.role) leaveRoom(true); }catch(e){}
+  trackEnd("left",null);
+  const u=AUTH.user&&FBD?FBD.collection("users").doc(AUTH.user.uid).update({online:false}).catch(()=>{}):Promise.resolve();
+  u.then(()=>FBA.signOut()); goHome();
+}
+
+/* ---- activity tracking: every signed-in player records their own games ---- */
+const TR={key:null,start:0,game:null,host:false,code:"",players:0};
+function trackRoom(v){
+  if(AUTH.state!=="in"||!FBD||!AUTH.user) return;
+  if(v.phase==="play"){
+    const key=v.code+"|"+v.game+"|"+(v.hist||[]).length;
+    if(TR.key!==key){
+      if(TR.key) trackEnd("left",null);
+      Object.assign(TR,{key,start:Date.now(),game:v.game,host:v.me===v.hostPid,code:v.code,players:v.players.filter(p=>!p.left).length});
+      const up={gamesPlayed:fbInc(1),lastGame:v.game,lastPlayedAt:fbNow()};
+      up["stats."+v.game+".played"]=fbInc(1); up["stats."+v.game+".last"]=fbNow(); if(TR.host) up["stats."+v.game+".hosted"]=fbInc(1);
+      FBD.collection("users").doc(AUTH.user.uid).update(up).catch(()=>{});
+    }
+  } else if(TR.key) trackEnd(v.phase==="end"?"end":"left",v);
+}
+function trackEnd(reason,v){
+  if(!TR.key||!FBD||!AUTH.user||AUTH.state!=="in"){ TR.key=null; return; }
+  const dur=Math.round((Date.now()-TR.start)/1000), g=TR.game, done=reason==="end"&&!!v; let score=0, won=false;
+  if(done){
+    const b=v.base||{}, all=v.players.map(p=>(v.scores[p.pid]||0)-(b[p.pid]||0)); score=(v.scores[v.me]||0)-(b[v.me]||0);
+    won=score>0&&score>=Math.max(...all);
+  }
+  const up={totalSeconds:fbInc(dur)}; up["stats."+g+".seconds"]=fbInc(dur);
+  if(done){ up["stats."+g+".completed"]=fbInc(1); up["stats."+g+".score"]=fbInc(score); if(won) up["stats."+g+".wins"]=fbInc(1); }
+  FBD.collection("users").doc(AUTH.user.uid).update(up).catch(()=>{});
+  fbLogTo(AUTH.user.uid,"game",{game:g,role:TR.host?"host":"player",durationSec:dur,completed:done,won,score,players:TR.players,room:TR.code});
+  TR.key=null;
+}
+function trackSweep(){ if(TR.key&&!(S&&S.screen==="room"&&S.room&&S.room.phase==="play")) trackEnd("left",null); }
+
+/* ---- admin: live invites + users ---- */
+function fbAdminSync(){
+  const need=AUTH.state==="in"&&AUTH.isAdmin&&S&&S.screen==="admin", A=AUTH.adm;
+  if(need&&!A.subs.length){
+    const bad=e=>{ A.err=fbErrText(e); render(); };
+    A.subs=[
+      FBD.collection("invites").onSnapshot(s=>{ A.invites=s.docs.map(d=>Object.assign({id:d.id},d.data())); A.err=null; render(); },bad),
+      FBD.collection("users").onSnapshot(s=>{ A.users={}; s.docs.forEach(d=>{ A.users[d.id]=Object.assign({id:d.id},d.data()); }); render(); },bad)];
+  } else if(!need&&A.subs.length){ A.subs.forEach(f=>{ try{ f(); }catch(e){} }); A.subs=[]; }
+}
+const admLink=()=>location.origin+location.pathname;
+async function admInvite(){
+  const email=authVal("admEmail").toLowerCase(), name=authVal("admName").slice(0,30);
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast("Enter a valid e-mail address.","err");
+  const cur=AUTH.adm.invites.find(i=>i.id===email);
+  if(cur&&cur.status==="registered") return toast("That person already has an account.","err");
+  try{
+    await FBD.collection("invites").doc(email).set({email,name,status:"invited",invitedAt:fbNow(),invitedBy:ADMIN_EMAIL});
+    S.ui.admEmail=""; S.ui.admName=""; toast("Invited "+email+". Share the site link so they can register.","ok");
+  }catch(e){ toast(fbErrText(e),"err"); }
+}
+async function admRemove(email){
+  const u=Object.values(AUTH.adm.users).find(x=>x.email===email);
+  try{
+    if(u){
+      const acts=await FBD.collection("users").doc(u.id).collection("activity").get();
+      for(let i=0;i<acts.docs.length;i+=400){ const b=FBD.batch(); acts.docs.slice(i,i+400).forEach(d=>b.delete(d.ref)); await b.commit(); }
+      await FBD.collection("users").doc(u.id).delete();
+      await FBD.collection("invites").doc(email).set({email,name:u.name||"",status:"removed",removedAt:fbNow(),invitedBy:ADMIN_EMAIL},{merge:true});
+    } else await FBD.collection("invites").doc(email).delete();
+    toast(u?"Account removed – they can't sign in any more.":"Invite revoked.","ok");
+  }catch(e){ toast(fbErrText(e),"err"); }
+}
+async function admReinvite(email){
+  try{ await FBD.collection("invites").doc(email).set({email,status:"invited",invitedAt:fbNow(),invitedBy:ADMIN_EMAIL},{merge:true}); toast("Invited again.","ok"); }catch(e){ toast(fbErrText(e),"err"); }
+}
+async function admMail(email){
+  const c=xmCfg(); if(!c.service) return toast("E-mail sending isn't set up (the e-mail draws use EmailJS) – use Copy link instead.","err");
+  const html=`<div style="font-family:Arial,sans-serif;font-size:16px;color:#222">You've been invited to <b>Game Hub</b>! Open <a href="${admLink()}">${admLink()}</a>, choose <b>Register</b> and use this e-mail address (${esc(email)}).</div>`;
+  try{ await emailSend({to_email:email,to_name:email,subject:"You're invited to Game Hub 🎮",value:"",html,text:"You're invited to Game Hub: "+admLink()+" – register with "+email}); toast("Invitation e-mailed.","ok"); }catch(e){ toast("Couldn't send: "+(e.message||e),"err"); }
+}
+async function admLoadAct(uid,store,key){
+  store[key]=null; render();
+  try{ const s=await FBD.collection("users").doc(uid).collection("activity").orderBy("at","desc").limit(25).get(); store[key]=s.docs.map(d=>d.data()); }catch(e){ store[key]=[]; }
+  render();
+}
+function admRows(){
+  const A=AUTH.adm, byEmail={}, rows=[], seen=new Set();
+  Object.values(A.users).forEach(u=>{ byEmail[u.email]=u; });
+  A.invites.forEach(i=>{ const u=byEmail[i.id]||null; seen.add(i.id);
+    rows.push({email:i.id,name:(u&&u.name)||i.name||"",inv:i,u,status:u?"active":i.status==="invited"?"invited":"removed"}); });
+  Object.values(A.users).forEach(u=>{ if(!seen.has(u.email)) rows.push({email:u.email,name:u.name,inv:null,u,status:"active",admin:u.role==="admin"}); });
+  const q=authVal("admQ").toLowerCase();
+  return rows.filter(r=>!q||(r.email+" "+r.name).toLowerCase().includes(q)).sort((a,b)=>fbMs(b.u&&b.u.lastLoginAt)-fbMs(a.u&&a.u.lastLoginAt)||a.email.localeCompare(b.email));
+}
+
+/* ---- screens ---- */
+function authGate(){ return AUTH.on&&AUTH.state!=="off"&&AUTH.state!=="offline"&&AUTH.state!=="in"?authHTML():null; }
+function authHTML(){
+  const A=AUTH, hero=`<header class="hero"><h1>Game Hub</h1><p>Sign in to play.</p></header>`;
+  const msg=(A.err?`<div class="msg err">${esc(A.err)}</div>`:"")+(A.info?`<div class="msg info">${esc(A.info)}</div>`:"");
+  if(A.state==="loading") return hero+`<div class="card2" style="text-align:center"><h3>🚀 Checking your account…</h3><p class="mut">Connecting to Game Hub</p></div>`;
+  if(A.state==="error") return hero+`<div class="card2"><div class="msg err">Couldn't reach the account service. Check your connection and try again.</div><button class="btn block" data-a="authRetry">Try again</button></div>`;
+  if(A.state==="verify") return hero+`<div class="card2"><h3>📧 Verify your e-mail</h3>${msg}<p class="mut">We sent a link to <b>${esc(A.user&&A.user.email||"")}</b>. Open it, then come back and press the button.</p>
+    <button class="btn green block" data-a="authRecheck" ${A.busy?"disabled":""}>I've verified – continue</button>
+    <div class="row" style="margin-top:10px"><button class="btn secondary" data-a="authResend">Send the e-mail again</button><button class="btn secondary" data-a="authLogout">Use another account</button></div></div>`;
+  const m=A.mode, inp=(id,label,type,ph,extra)=>`<label>${label}</label><input type="${type}" id="${id}" data-keep autocomplete="${extra||"off"}" placeholder="${ph||""}" value="${esc(S.ui[id]||"")}">`;
+  let f="";
+  if(m==="register") f=`<div class="msg info">Only e-mails the admin has invited can register. After registering you'll get a verification e-mail.</div>${inp("authName","Your name","text","Name shown in games","name")}${inp("authEmail","Invited e-mail","email","you@example.com","email")}${inp("authPass","Choose a password","password","At least 6 characters","new-password")}${inp("authPass2","Repeat the password","password","","new-password")}
+    <button class="btn green block" style="margin-top:12px" data-a="authRegister" ${A.busy?"disabled":""}>Create account</button>`;
+  else if(m==="forgot") f=`${inp("authEmail","E-mail","email","you@example.com","email")}<button class="btn block" style="margin-top:12px" data-a="authReset">Send reset link</button>`;
+  else f=`${inp("authEmail","E-mail","email","you@example.com","email")}${inp("authPass","Password","password","","current-password")}
+    <button class="btn green block" style="margin-top:12px" data-a="authLogin" ${A.busy?"disabled":""}>Sign in</button>`;
+  const tab=(k,l)=>`<button class="btn ${m===k?"":"secondary"}" data-a="authMode" data-mode="${k}">${l}</button>`;
+  return hero+`<div class="card2" style="max-width:480px;margin:0 auto"><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">${tab("login","Sign in")}${tab("register","Register")}${tab("forgot","Forgot password")}</div>${msg}${f}</div>`;
+}
+function acctBarHTML(){
+  if(!AUTH.on) return "";
+  if(AUTH.state==="offline") return `<div class="msg warn">📴 Signed-out offline mode – accounts need an internet connection. The offline games below still work.</div>`;
+  if(AUTH.state!=="in") return "";
+  const p=AUTH.profile||{};
+  return `<div class="acct-bar"><span class="chip">👤 ${esc(p.name||AUTH.user.email)}${AUTH.isAdmin?" · 🛡 Admin":""}</span>
+    <button class="btn secondary" data-a="goMyStats">📊 My activity</button>${AUTH.isAdmin?`<button class="btn secondary" data-a="goAdmin">🛡 Admin</button>`:""}<button class="btn secondary" data-a="authLogout">Sign out</button></div>`;
+}
+const gameLabel=g=>GTITLE[g]||g;
+function statsTableHTML(stats){
+  const rows=Object.keys(stats||{}).sort((a,b)=>(stats[b].played||0)-(stats[a].played||0));
+  if(!rows.length) return `<p class="mut">No games played yet.</p>`;
+  return `<div class="adm-tw"><table class="adm-t"><thead><tr><th>Game</th><th>Played</th><th>Hosted</th><th>Finished</th><th>Wins</th><th>Points</th><th>Time</th><th>Last played</th></tr></thead><tbody>${rows.map(g=>{ const s=stats[g]; return `<tr><td>${esc(gameLabel(g))}</td><td>${s.played||0}</td><td>${s.hosted||0}</td><td>${s.completed||0}</td><td>${s.wins||0}</td><td>${s.score||0}</td><td>${fbDur(s.seconds)}</td><td>${fbAgo(fbMs(s.last))}</td></tr>`; }).join("")}</tbody></table></div>`;
+}
+function actListHTML(list){
+  if(list===null) return `<p class="mut">Loading…</p>`;
+  if(!list||!list.length) return `<p class="mut">No activity yet.</p>`;
+  return `<ul class="adm-act">${list.map(a=>`<li><span class="mut">${fbDate(fbMs(a.at))}</span> ${a.type==="login"?`🔑 Signed in${a.first?" (first time)":""}${a.device?` <span class="mut">· ${esc(a.device)}</span>`:""}`:`🎮 ${esc(gameLabel(a.game))} · ${a.role==="host"?"hosted":"joined"} · ${a.players||1} player${a.players===1?"":"s"} · ${fbDur(a.durationSec)} · ${a.completed?(a.won?"🏆 won":"finished")+(a.score?` · ${a.score} pts`:""):"left early"}`}</li>`).join("")}</ul>`;
+}
+function myStatsHTML(){
+  const p=AUTH.profile||{};
+  const card=(k,v)=>`<div class="adm-card"><b>${v}</b><span>${k}</span></div>`;
+  return `<div class="adm-cards">${card("Games played",p.gamesPlayed||0)}${card("Play time",fbDur(p.totalSeconds))}${card("Sign-ins",p.loginCount||0)}${card("Last sign-in",fbAgo(fbMs(p.lastLoginAt)))}</div>
+    <h3>Per game</h3>${statsTableHTML(p.stats)}<h3 style="margin-top:18px">Recent activity</h3>${actListHTML(AUTH.my.act)}`;
+}
+function adminHTML(){
+  const A=AUTH.adm, rows=admRows(), all=Object.values(A.users), now=Date.now();
+  const card=(k,v)=>`<div class="adm-card"><b>${v}</b><span>${k}</span></div>`;
+  const games={}; all.forEach(u=>Object.keys(u.stats||{}).forEach(g=>{ games[g]=(games[g]||0)+(u.stats[g].played||0); }));
+  const top=Object.keys(games).sort((a,b)=>games[b]-games[a])[0];
+  let h=A.err?`<div class="msg err">${esc(A.err)} – have you published firestore.rules?</div>`:"";
+  h+=`<div class="adm-cards">${card("Active accounts",all.filter(u=>u.role!=="admin").length)}${card("Invited, not registered",A.invites.filter(i=>i.status==="invited"&&!all.some(u=>u.email===i.id)).length)}${card("Online now",all.filter(fbOnline).length)}${card("Active last 7 days",all.filter(u=>now-fbMs(u.lastLoginAt)<6048e5).length)}${card("Games played",all.reduce((a,u)=>a+(u.gamesPlayed||0),0))}${card("Total play time",fbDur(all.reduce((a,u)=>a+(u.totalSeconds||0),0)))}${card("Most played",top?esc(gameLabel(top)):"–")}</div>`;
+  h+=`<div class="card2"><h3>✉️ Invite someone</h3><p class="mut" style="margin:0 0 8px">Only invited e-mails can register. Add the address here, then send them the site link.</p>
+    <div class="row"><div><label>E-mail</label><input type="email" id="admEmail" data-keep autocomplete="off" placeholder="friend@example.com" value="${esc(S.ui.admEmail||"")}"></div>
+    <div><label>Name (optional)</label><input type="text" id="admName" data-keep autocomplete="off" maxlength="30" value="${esc(S.ui.admName||"")}"></div></div>
+    <button class="btn green" style="margin-top:10px" data-a="admInvite">Send invite</button></div>`;
+  h+=`<div class="card2" style="margin-top:14px"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between"><h3 style="margin:0">👥 People (${rows.length})</h3>
+    <input type="text" id="admQ" data-keep autocomplete="off" placeholder="Search name or e-mail" style="max-width:260px" value="${esc(S.ui.admQ||"")}"></div>`;
+  if(!rows.length) h+=`<p class="mut">Nobody yet – invite someone above.</p>`;
+  else h+=`<div class="adm-tw"><table class="adm-t"><thead><tr><th>Person</th><th>Status</th><th>Last sign-in</th><th>Sign-ins</th><th>Seen</th><th>Games</th><th>Play time</th><th>Device</th><th></th></tr></thead><tbody>`+rows.map(r=>{
+    const u=r.u, open=A.open===r.email, st=r.status==="active"?(fbOnline(u)?`<span class="adm-pill on">● online</span>`:`<span class="adm-pill ok">active</span>`):r.status==="invited"?`<span class="adm-pill wait">invited</span>`:`<span class="adm-pill off">removed</span>`;
+    const acts=r.admin?`<span class="mut">admin</span>`:r.status==="active"?`<button class="btn danger" data-a="admRemove" data-key="${esc(r.email)}">🗑 Remove</button>`
+      :r.status==="invited"?`<button class="btn secondary" data-a="admCopy" data-key="${esc(r.email)}">🔗 Link</button> <button class="btn secondary" data-a="admMail" data-key="${esc(r.email)}">✉</button> <button class="btn danger" data-a="admRemove" data-key="${esc(r.email)}">Revoke</button>`
+      :`<button class="btn secondary" data-a="admReinvite" data-key="${esc(r.email)}">↩ Re-invite</button>`;
+    let row=`<tr class="${r.status}"><td><button class="adm-name" data-a="admToggle" data-key="${esc(r.email)}" ${u?"":"disabled"}>${u?(open?"▾ ":"▸ "):""}<b>${esc(r.name||"–")}</b></button><div class="mut">${esc(r.email)}</div></td><td>${st}</td>
+      <td>${u?fbAgo(fbMs(u.lastLoginAt)):"–"}<div class="mut">${u?fbDate(fbMs(u.lastLoginAt)):""}</div></td><td>${u?u.loginCount||0:"–"}</td><td>${u?(fbOnline(u)?"now":fbAgo(fbMs(u.lastSeen))):"–"}</td>
+      <td>${u?u.gamesPlayed||0:"–"}${u&&u.lastGame?`<div class="mut">last: ${esc(gameLabel(u.lastGame))}</div>`:""}</td><td>${u?fbDur(u.totalSeconds):"–"}</td><td class="mut">${u?esc(u.device||"–"):"–"}</td><td class="adm-ac">${acts}</td></tr>`;
+    if(open&&u) row+=`<tr class="adm-det"><td colspan="9"><div class="mut" style="margin-bottom:6px">Registered ${fbDate(fbMs(u.createdAt))} · ${esc(u.email)}</div><h4>Games</h4>${statsTableHTML(u.stats)}<h4 style="margin-top:12px">Recent activity</h4>${actListHTML(A.act[u.id])}</td></tr>`;
+    return row;
+  }).join("")+`</tbody></table></div>`;
+  return h+`</div>`;
+}
+
 /* ================= START ================= */
 let ticker=null;
 function startApp(){
   S=freshState();
+  setTimeout(fbInit,0);
   buildPad(); buildSkCanvas(); buildSpace();
   const app=$("app");
   app.addEventListener("click",onAppClick);
