@@ -1438,6 +1438,9 @@ function numDeal(R){
 }
 function numAct(R,pid,m){
   const g=R.g;
+  if(m.a==="numreveal"&&pid===R.hostPid&&g.phase==="play"){      // host gives up: show the number, no points
+    g.res={winner:null,pts:{}}; g.phase="reveal"; g.deadline=0; return;
+  }
   if(m.a!=="guess"||g.phase!=="play") return;
   if(g.ids[g.turn]!==pid) return tell(R,pid,"It's not your turn.");
   const guess=String(m.guess||"").trim();
@@ -3102,6 +3105,7 @@ function numGameHTML(v){
         <div class="guess-row"><input type="text" id="guess" data-keep inputmode="numeric" maxlength="${d}" autocomplete="off">
         <button class="btn" data-a="guess">Check Result</button></div>`;
     } else h+=`<div class="msg info" style="margin-top:12px">⏳ ${pAv(v,cur)} <b>${esc(pName(v,cur))}'s turn</b></div>`;
+    if(host) h+=`<button class="btn secondary" style="margin-top:12px" data-a="act" data-x="numreveal">🔍 Nobody can find it – reveal the number</button>`;
   } else {
     const r=g.res;
     h+=r.winner
