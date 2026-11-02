@@ -1031,6 +1031,7 @@ function joinRoom(code,spec){
   NET.abortJoin=()=>{ if(NET.settled) return; try{ peer.destroy(); }catch(e){} clearTimeout(to); clearSession(); S.busy=null; NET.abortJoin=null; back(); render(); };
   renderSys();
   peer.on("error",e=>{
+    if(!NET.settled&&spec&&e.type==="peer-unavailable") admClearLive(code);     // the room is gone: drop the stale "playing" entry
     if(!NET.settled) fail(e.type==="peer-unavailable"?"Room not found. Check the code (the host must keep the room open and the tab in front).":"Connection error ("+e.type+").");
   });
   peer.on("open",()=>{
@@ -2963,7 +2964,7 @@ function roomHTML(){
   return h+roomBodyHTML(v,host);
 }
 function specBarHTML(v){
-  const others=Object.values(AUTH.adm.users).filter(u=>fbOnline(u)&&u.liveRoom&&u.liveRoom.code&&u.liveRoom.code!==v.code&&u.role!=="admin");
+  const others=Object.values(AUTH.adm.users).filter(u=>fbLiveRoom(u)&&u.liveRoom.code!==v.code&&u.role!=="admin");
   return `<div class="topbar"><h1 class="title">👁 ${GTITLE[v.game]}</h1><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn secondary" data-a="admBack">🛡 Back to people</button></div></div>
     <div class="msg info">👁 <b>Watching as admin</b> – view only. You can't change settings or affect the game.</div>
     ${others.length?`<div class="scoreboard" style="margin:0 0 10px"><span class="mut">Watch someone else:</span>${others.map(u=>`<button class="btn secondary" data-a="admWatch" data-key="${esc(u.email)}">${esc(u.name||u.email)} · ${esc(gameLabel(u.liveRoom.game))}</button>`).join("")}</div>`:""}`;
@@ -4609,7 +4610,7 @@ function fbStart(u,ref){
   AUTH.hb=setInterval(()=>{ if(document.visibilityState==="visible") ref.update({lastSeen:fbNow(),online:true}).catch(()=>{}); },60000);
 }
 document.addEventListener("visibilitychange",()=>{ if(AUTH.state==="in"&&FBD&&AUTH.user) FBD.collection("users").doc(AUTH.user.uid).update({online:document.visibilityState==="visible",lastSeen:fbNow()}).catch(()=>{}); });
-window.addEventListener("pagehide",()=>{ try{ trackEnd("left",null); if(AUTH.state==="in"&&FBD&&AUTH.user) FBD.collection("users").doc(AUTH.user.uid).update({online:false,lastSeen:fbNow()}).catch(()=>{}); }catch(e){} });
+window.addEventListener("pagehide",()=>{ try{ trackEnd("left",null); if(AUTH.state==="in"&&FBD&&AUTH.user){ LIVE_KEY=null; FBD.collection("users").doc(AUTH.user.uid).update({online:false,lastSeen:fbNow(),liveRoom:firebase.firestore.FieldValue.delete()}).catch(()=>{}); } }catch(e){} });
 function fbLogTo(uid,type,data){ try{ FBD.collection("users").doc(uid).collection("activity").add(Object.assign({type,at:fbNow()},data)).catch(()=>{}); }catch(e){} }
 
 /* ---- sign in / register / reset ---- */
@@ -4707,6 +4708,10 @@ function fbSetLive(r){
   if(key===LIVE_KEY) return; LIVE_KEY=key;
   if(!FBD||!AUTH.user||AUTH.state!=="in") return;
   FBD.collection("users").doc(AUTH.user.uid).update({liveRoom:r?Object.assign({},r,{at:fbNow()}):firebase.firestore.FieldValue.delete()}).catch(()=>{});
+}
+const fbLiveRoom=u=>u&&u.liveRoom&&u.liveRoom.code&&fbOnline(u)&&Date.now()-fbMs(u.lastSeen)<90000?u.liveRoom:null;
+function admClearLive(code){
+  Object.values(AUTH.adm.users).forEach(u=>{ if(u.liveRoom&&u.liveRoom.code===code) FBD.collection("users").doc(u.id).update({liveRoom:firebase.firestore.FieldValue.delete()}).catch(()=>{}); });
 }
 function trackRoom(v){
   if(AUTH.state!=="in"||!FBD||!AUTH.user) return;
@@ -4872,7 +4877,7 @@ function adminHTML(){
     const acts=isAdm?(me?`<span class="mut">you (admin)</span>`:`<button class="btn secondary" data-a="admRole" data-key="${esc(r.email)}" data-role="user">Remove admin</button>`):r.status==="active"?`<button class="btn secondary" data-a="admRole" data-key="${esc(r.email)}" data-role="admin">⭐ Make admin</button> <button class="btn danger" data-a="admRemove" data-key="${esc(r.email)}">🗑 Remove</button>`
       :r.status==="invited"?`<button class="btn secondary" data-a="admCopy" data-key="${esc(r.email)}">🔗 Link</button> <button class="btn secondary" data-a="admMail" data-key="${esc(r.email)}">✉</button> <button class="btn danger" data-a="admRemove" data-key="${esc(r.email)}">Revoke</button>`
       :`<button class="btn secondary" data-a="admReinvite" data-key="${esc(r.email)}">↩ Re-invite</button>`;
-    const lr=u&&fbOnline(u)&&u.liveRoom&&u.liveRoom.code?u.liveRoom:null;
+    const lr=fbLiveRoom(u);
     const gv=lr?`<span class="adm-pill on">${esc(gameLabel(lr.game))}</span> <span class="mut">${esc(lr.code)} · ${lr.phase==="lobby"?"lobby":lr.phase==="end"?"finished":"playing"}</span> <button class="btn secondary" data-a="admWatch" data-key="${esc(r.email)}">👁 Watch</button>`:`<span class="mut">–</span>`;
     let row=`<tr class="${r.status}"><td><button class="adm-name" data-a="admToggle" data-key="${esc(r.email)}" ${u?"":"disabled"}>${u?(open?"▾ ":"▸ "):""}<b>${esc(r.name||(u?"–":""))}</b></button>${isAdm?` <span class="adm-pill on">admin</span>`:""}<div class="mut">${esc(r.email)}</div></td><td ${u?`title="Last seen ${fbAgo(fbMs(u.lastSeen))}"`:""}>${st}</td>
       <td ${u?`title="${fbDate(fbMs(u.lastLoginAt))}"`:""}>${u?fbAgo(fbMs(u.lastLoginAt)):"–"}</td><td>${u?u.loginCount||0:"–"}</td>
