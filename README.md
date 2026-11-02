@@ -47,7 +47,23 @@ The **host chooses the number of players** (2, 3 or 4). Seats nobody joins are p
 - Settings: rounds, number of players, computer strength, pass-and-play (2 seats, alone), your colour, random or rotating seats, clock (1–30 min) + increment, legal-move hints.
 - **Controls:** click a piece, then a highlighted square – or **drag and drop** it (touch works too). 🔄 rotates your view.
 - **Look:** a big, centred board in the hub's space theme with neon piece colours. **All players' timers sit in one row above the board**; the moves list is below it. The last move's start and end squares stay **yellow**. When it is your turn an **astronaut pops up in the bottom-left corner holding a flag: "It is your turn ! ♟️"** and keeps popping until you move.
-- A player who leaves, is kicked, or is offline for 60 s on their turn plays the ejection cutscene and a **computer takes over their pieces**. Once fewer than 2 humans are left (in a game that started with several), everyone sees "Less players than required" and goes back to the room. Running out of time loses.
+- A player who leaves, is kicked, or is offline for 60 s on their turn is **out: their pieces are removed from the board** (they fade away) and the others carry on – on the 2-player board the opponent wins. A see-through airlock cutscene plays on top, so everyone can still see the board. Once fewer than 2 humans are left (in a game that started with several), everyone sees "Less players than required" and goes back to the room. Running out of time loses.
+
+### 🎲 Dots and Boxes
+2–20 players, room based. A grid of dots; on your turn you **roll the dice** and may draw **that many lines** between neighbouring dots. The line that closes a box claims it – the box is tinted in your colour and **your emoji is stamped inside**. Every player gets a **different emoji** (your avatar if nobody else has it, otherwise a free one). The round ends when every box is taken; 1 box = 1 point.
+- Tap a line between two dots to draw it. Your lines are coloured with your colour; the latest line glows.
+- Players and their box counts are shown above the board; the dice tumble for everyone when someone rolls.
+- Settings: rounds, dots across (3–10), dots down (3–10), 1 or 2 dice, optional **bonus line for closing a box**, time to roll and to draw (a turn that times out is skipped).
+- **Play again:** after the last round the host presses **New game – same room, scores carry on**; the series total keeps adding up.
+- A player who leaves forfeits their remaining turns (their boxes stay on the board); the game stops if fewer than 2 players are left. Needs internet (online rooms only).
+
+### 🏁 Ludo
+Up to **6 players**, room based (also playable alone against the computer, offline). Classic rules: roll a **6** to bring a token out, travel once round the ring, go up your home column and finish with an exact roll. Land on a lone opponent to send their token back to the yard; start squares and ★ squares are safe. A 6, a capture or a token home gives another roll; three 6s in a row lose the turn. Finishing order scores points.
+- **Settings (host):** rounds, **board** (4-colour for up to 4 players, 6-colour for up to 6), **colours nobody sits on** – *played by the computer* or *left empty* (so 2 people can play on the 4-colour board with 2 computers, or on their own), computer strength, time per roll/move (when it runs out the game plays for you).
+- Captures play a burst animation on the square. A player who leaves or is kicked is **out and their tokens vanish** (a see-through airlock scene plays over the board, so the game stays visible).
+
+### ✊ Rock Paper Scissors
+Everyone throws ✊ ✋ ✌️ in secret; all throws are revealed together. **2 players** (or you vs the computer): first to 1–4 throw wins takes the round. **3+ players**: the throws that lose knock their players out until one is left; all three signs (or only one) is a draw and everyone throws again. Settings: rounds, computer players (a lone player always gets one), throw target, time to choose. Works offline against the computer.
 
 ### 🎄 ChristMom ChristChild / 🪔 Diwali Daddy Diwali Kid
 Secret-Santa style draws. Names and emails are entered, a random matching (nobody gets themselves) is made, and each person is emailed their match. Pairs are never shown on screen.

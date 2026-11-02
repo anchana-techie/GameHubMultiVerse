@@ -448,6 +448,16 @@
   .ej{position:absolute;inset:0;overflow:hidden;background:#02030a;color:#fff;--al:#ff4d5e;--hull:38vmin;animation:ejIn .35s ease-out both;user-select:none;-webkit-user-select:none}
   .ej.tone-good{--al:#ffd25e}
   .ej.out{animation:ejOut .4s ease-in forwards}
+  /* peek: see-through airlock scene for players leaving mid-game - the board stays visible and clickable */
+  #eject.peek{z-index:300;pointer-events:none}
+  #eject.peek .ej-ui{pointer-events:auto}
+  .ej.peek{background:transparent;--hull:20vmin}
+  .ej.peek .ej-stars,.ej.peek .ej-planet,.ej.peek .ej-moon{display:none}
+  .ej.peek .ej-hull{opacity:.55}
+  .ej.peek .ej-alarm{opacity:.5}
+  .ej.peek .ej-text{bottom:2vh;padding-top:2.5vh;background:linear-gradient(0deg,#02030acc,transparent)}
+  .ej.peek .ej-head{font-size:clamp(1.1rem,3.6vw,2rem)}
+  .ej.peek .ej-eyebrow{top:max(2vh,10px)}
   @keyframes ejIn{from{opacity:0}to{opacity:1}}
   @keyframes ejOut{to{opacity:0}}
   .ej-world{position:absolute;inset:0;animation:ejShake .65s linear 1.7s}
@@ -562,6 +572,86 @@
   .cs-chip.out b{text-decoration:line-through}
   @media(max-width:1000px){.layout.with-chat{grid-template-columns:minmax(0,1fr)}.chatcol{padding:0 16px 24px}.chat{position:static;height:420px}}
 
+  /* home: three columns, Join a room spans the full width underneath */
+  .game-grid.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .game-grid.g2{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:14px}   /* the two buttons together are exactly as wide as the rows above */
+  @media(max-width:560px){.game-grid.g2{grid-template-columns:minmax(0,1fr)}}
+  .game-btn.wide{grid-column:1/-1;flex-direction:row;align-items:center;flex-wrap:wrap;gap:6px 16px}
+  .game-btn.wide span.d{flex:1 1 240px}
+  @media(max-width:760px){.game-grid.g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}}
+  /* dots and boxes */
+  .db-wrap{max-width:640px;margin:14px auto}
+  .db-svg{width:100%;height:auto;display:block;background:#ffffff0a;border:1px solid var(--border);border-radius:14px;touch-action:manipulation}
+  .db-dot{fill:#e6e9ff}
+  .db-ln{stroke:#ffffff1c;stroke-width:7;stroke-linecap:round}
+  .db-hit{stroke:transparent;stroke-width:40;stroke-linecap:round}
+  .db-l.on .db-ln{stroke-width:11}
+  .db-l.can{cursor:pointer}
+  .db-l.can .db-ln{stroke:#ffffff45}
+  .db-l.can:hover .db-ln{stroke:#fff;stroke-width:11}
+  .db-l.last .db-ln{filter:drop-shadow(0 0 6px #fff)}
+  .db-mk{pointer-events:none}
+  .db-dice{display:flex;gap:14px;justify-content:center;align-items:center;margin:12px 0}
+  .db-die{width:68px;height:68px;border-radius:14px;background:#f4f6fb;box-shadow:0 6px 16px #0007,inset 0 -4px 0 #c9d0df;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:10px;gap:2px}
+  .db-die i{display:block;width:100%;height:100%}
+  .db-die i.p{background:#1b2150;border-radius:50%;transform:scale(.8)}
+  .db-sum{font-size:1.6rem;font-weight:800;color:var(--warn)}
+  .db-roll{font-size:1.15rem;padding:14px}
+  /* ludo */
+  .lu-play{display:flex;gap:18px;align-items:center;justify-content:center;margin:14px 0}
+  .lu-play .lu-wrap{flex:1 1 0;min-width:0;max-width:640px;margin:0}
+  .lu-side{flex:0 0 230px;display:flex;flex-direction:column;gap:10px;align-items:stretch}
+  .lu-side .db-dice{margin:4px 0}
+  .lu-side .msg{margin:0}
+  @media(max-width:820px){.lu-play{flex-direction:column-reverse}.lu-side{flex:none;width:100%}}
+  .lu-wrap{max-width:640px;margin:14px auto}
+  .lu-svg{width:100%;height:auto;display:block;background:#0b0f2a;border:1px solid var(--border);border-radius:18px;touch-action:manipulation}
+  .lu-dot{display:inline-block;width:.8em;height:.8em;border-radius:50%;vertical-align:-.05em;border:1px solid #fff9}
+  .lu-can{cursor:pointer}
+  .lu-fl{transform-box:fill-box;transform-origin:50% 100%;animation:luFlame .42s ease-in-out infinite alternate}
+  .lu-glow{animation:luGlow 1.8s ease-in-out infinite alternate}
+  @keyframes luFlame{from{transform:scale(.82,.88);opacity:.75}to{transform:scale(1.05,1.2);opacity:1}}
+  @keyframes luGlow{from{opacity:.25}to{opacity:.7}}
+  .lu-burst{animation:luBurst 1.2s ease-out both;pointer-events:none}
+  .lu-fade{animation:luFade 5s ease-in both;pointer-events:none}
+  @keyframes luPulse{from{opacity:.45;transform:scale(.9)}to{opacity:1;transform:scale(1.15)}}
+  @keyframes luBurst{0%{opacity:0;transform:scale(.3)}25%{opacity:1;transform:scale(1.25)}100%{opacity:0;transform:scale(1.7)}}
+  @keyframes luFade{0%{opacity:1;transform:scale(1)}30%{opacity:1;transform:scale(1.5)}100%{opacity:0;transform:scale(.1)}}
+  /* rock paper scissors */
+  .rps-row{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:14px 0}
+  .rps-row{padding-top:84px}
+  .rps-slot{position:relative;min-width:120px;flex:1 1 120px;max-width:190px}
+  .rps-astro{position:absolute;z-index:0;left:50%;top:-80px;width:80px;transform:translate(-50%,84px);animation:rpsRise 2.8s ease-in-out both;pointer-events:none}
+  .rps-astro svg{display:block;width:100%;height:auto;overflow:visible}
+  .rps-astro .ej-leg,.rps-astro .ej-arm.l{animation:none}
+  .rps-astro .ej-arm{transform-box:fill-box;transform-origin:50% 8%}
+  .rps-astro.wave .ej-arm.r{animation:rpsHi .5s ease-in-out infinite alternate}   /* hi: the hand swings right and left */
+  .rps-astro.shrug .ej-arm.r{animation:rpsShrugR .6s ease-in-out infinite alternate}
+  .rps-astro.shrug .ej-arm.l{animation:rpsShrugL .6s ease-in-out infinite alternate}
+  @keyframes rpsRise{0%{transform:translate(-50%,84px)}14%,84%{transform:translate(-50%,0)}100%{transform:translate(-50%,84px)}}
+  @keyframes rpsHi{from{transform:rotate(-135deg)}to{transform:rotate(-175deg)}}
+  @keyframes rpsShrugR{from{transform:rotate(-25deg)}to{transform:rotate(-55deg)}}
+  @keyframes rpsShrugL{from{transform:rotate(25deg)}to{transform:rotate(55deg)}}
+  .rps-p{position:relative;z-index:1;background:#12163a !important;text-align:center;padding:12px 8px;border-radius:14px;border:1px solid var(--border);transition:opacity .4s,transform .3s}
+  .rps-p.me{border-color:var(--accent)}
+  .rps-p.win{border-color:var(--ok,#46d6a4);box-shadow:0 0 18px -4px var(--ok,#46d6a4);transform:translateY(-4px)}
+  .rps-p.lose{opacity:.55}
+  .rps-p.out{opacity:.35;filter:grayscale(1)}
+  .rps-av{font-size:1.6rem}
+  .rps-nm{font-weight:700;font-size:.9rem;overflow-wrap:anywhere}
+  .rps-hand{font-size:3rem;line-height:1.3;min-height:1.3em}
+  .rps-hand.shown{animation:rpsPop .5s ease-out}
+  .rps-hand.ready{color:var(--accent2);font-size:2rem}
+  .rps-sc{font-size:.8rem;color:var(--muted)}
+  .rps-btns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;max-width:560px;margin:10px auto}
+  .rps-b{display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px 8px;border-radius:16px;border:1px solid #ffffff30;background:linear-gradient(160deg,#ffffff1c,#ffffff08);color:inherit;cursor:pointer;transition:transform .15s,border-color .15s}
+  .rps-b:hover{transform:translateY(-3px);border-color:var(--accent)}
+  .rps-b span{font-size:2.8rem}
+  @keyframes rpsPop{0%{transform:scale(.2) rotate(-25deg);opacity:0}70%{transform:scale(1.25) rotate(8deg)}100%{transform:scale(1) rotate(0)}}
+  @media(prefers-reduced-motion:reduce){.lu-fl,.lu-glow,.lu-burst,.lu-fade,.rps-hand{animation:none!important}}
+  @keyframes dbTumble{0%{transform:rotate(0) scale(.5);opacity:.3}60%{transform:rotate(540deg) scale(1.2);opacity:1}100%{transform:rotate(720deg) scale(1)}}
+  @media(prefers-reduced-motion:reduce){.db-die{animation:none!important}}
+
 </style>
 </head>
 <body>
@@ -628,9 +718,9 @@
 /* ================= CONSTANTS & HELPERS ================= */
 const EMOJIS = ["🐒","🐷","🦁","🐼","🐸","🦊","🐯","🐶","🦆"];
 const COLORS = { "None":"white", "Red":"red", "Green":"limegreen", "Yellow":"yellow" };
-const GTITLE = {number:"🎯 Number Game", spy:"🕵️ Who Is the Spy?", raja:"👑 Raja Rani", Scribblio:"🎨 Scribblio", chess:"♟️ Chess"};
-const MAXP = {number:10, spy:15, raja:20, Scribblio:12, chess:4};
-const MINP = {number:1, spy:3, raja:3, Scribblio:2, chess:1};
+const GTITLE = {number:"🎯 Number Game", spy:"🕵️ Who Is the Spy?", raja:"👑 Raja Rani", Scribblio:"🎨 Scribblio", chess:"♟️ Chess", dots:"🎲 Dots and Boxes", ludo:"🏁 Ludo", rps:"✊ Rock Paper Scissors"};
+const MAXP = {number:10, spy:15, raja:20, Scribblio:12, chess:4, dots:20, ludo:6, rps:10};
+const MINP = {number:1, spy:3, raja:3, Scribblio:2, chess:1, dots:2, ludo:1, rps:1};
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const spyMax = n => Math.max(1, Math.floor((n-1)/2));
@@ -662,6 +752,7 @@ const T_VOTE=[[30,"30 sec"],[60,"1 min"],[90,"90 sec"],[120,"2 min"],[180,"3 min
 const T_CLUE=[[15,"15 sec"],[30,"30 sec"],[45,"45 sec"],[60,"1 min"],[90,"90 sec"],[0,"No limit"]];
 const T_GUESS=[[30,"30 sec"],[60,"1 min"],[90,"90 sec"],[120,"2 min"],[0,"No limit"]];
 const ROUNDS=[1,2,3,4,5,6,8,10];
+const DB_DOTS=[3,4,5,6,7,8,9,10].map(n=>[n,n+" dots"]);
 const SETTINGS={
   spy:[
     {k:"rounds",l:"Rounds (games to play)",o:ROUNDS},
@@ -688,6 +779,27 @@ const SETTINGS={
     {k:"hints",l:"Letter hints for guessers",o:[[2,"On – a letter appears at ⅓ and ⅔ of the time"],[0,"Off"]]},
     {k:"src",l:"Words",o:[["random","Built-in word list"],["custom","Only my own words"]]}
   ],
+  dots:[
+    {k:"rounds",l:"Rounds (games to play)",o:ROUNDS},
+    {k:"cols",l:"Dots across",o:DB_DOTS},
+    {k:"rows",l:"Dots down",o:DB_DOTS},
+    {k:"dice",l:"Dice rolled each turn",o:[[1,"1 die – draw 1 to 6 lines"],[2,"2 dice – draw 2 to 12 lines"]]},
+    {k:"bonus",l:"When you close a box",o:[[0,"Nothing extra – draw exactly what you rolled"],[1,"Bonus – you get one extra line"]]},
+    {k:"turnTime",l:"Time to roll, then to draw",o:[[20,"20 sec"],[30,"30 sec"],[45,"45 sec"],[60,"1 min"],[90,"90 sec"],[0,"No limit"]]}
+  ],
+  ludo:[
+    {k:"rounds",l:"Rounds (games to play)",o:ROUNDS},
+    {k:"board",l:"Board (the most players it can hold)",o:[[4,"4-colour board – up to 4 players"],[6,"6-colour board – up to 6 players"]]},
+    {k:"fill",l:"Colours nobody sits on (e.g. 2 players on the 4-colour board)",o:[["bots","Played by the computer"],["empty","Left empty – no tokens there"]]},
+    {k:"level",l:"Computer strength",o:[[1,"Easy – random moves"],[2,"Smart – captures, safe squares, finishing"]],when:(n,st)=>st.fill==="bots"&&n<st.board},
+    {k:"turnTime",l:"Time to roll and to move (then the game plays for you)",o:[[15,"15 sec"],[30,"30 sec"],[45,"45 sec"],[60,"1 min"],[0,"No limit"]]}
+  ],
+  rps:[
+    {k:"rounds",l:"Rounds (matches to play)",o:ROUNDS},
+    {k:"cpu",l:"Computer players (a lone player always gets one)",o:[[0,"None"],[1,"1 computer"],[2,"2 computers"],[3,"3 computers"],[4,"4 computers"]]},
+    {k:"target",l:"2 players: a match is won by being first to",o:[[1,"1 throw win"],[2,"2 throw wins (best of 3)"],[3,"3 throw wins (best of 5)"],[4,"4 throw wins (best of 7)"]],when:(n,st)=>Math.max(2,n+(+st.cpu))<=2},
+    {k:"throwTime",l:"Time to choose",o:[[10,"10 sec"],[15,"15 sec"],[20,"20 sec"],[30,"30 sec"],[0,"No limit"]]}
+  ],
   chess:[
     {k:"rounds",l:"Rounds (games to play)",o:ROUNDS},
     {k:"players",l:"Number of players (empty seats are played by the computer)",o:[[2,"2 players – classic 8×8"],[3,"3 players – hexagon board"],[4,"4 players – cross board"]]},
@@ -706,6 +818,9 @@ const DEFAULTS={
   number:{rounds:3,digits:4,turnTime:30,maxAttempts:0},
   raja:{rounds:3,guessTime:60},
   Scribblio:{rounds:3,drawTime:80,wordChoice:1,hints:2,src:"random"},
+  dots:{rounds:1,cols:5,rows:5,dice:1,bonus:0,turnTime:45},
+  ludo:{rounds:1,board:4,fill:"bots",level:2,turnTime:30},
+  rps:{rounds:1,cpu:0,target:2,throwTime:15},
   chess:{rounds:1,players:2,theme:"cosmic",solo:"computer",level:2,side:"white",seat:"random",clock:10,inc:3,hints:1}
 };
 const BLURB={
@@ -713,6 +828,9 @@ const BLURB={
   number:"One secret number. Guess in turns. N = right digits anywhere, P = right digits in the right place. Faster win = more points.",
   raja:"Secret roles are dealt to each player's screen. The Police must find the Thief – a wrong guess hands the Police's points to the Thief.",
   Scribblio:"Draw & guess! Each turn one player gets a secret word and draws it; everyone else types guesses in the chat. A letter of the word is revealed after ⅓ of the time and another after ⅔. The faster you guess, the more points you score.",
+  dots:"Roll the dice, then draw that many lines between the dots. Close a box and it’s yours – your own emoji is stamped inside and it counts as a point. When every box is taken the round is over. Everyone gets a different emoji.",
+  ludo:"Classic Ludo for up to 6 players. Roll a 6 to bring a token out, go once round the board and up your home column, and finish with an exact roll. Land on a lone opponent to send their token back to the yard (the ★ squares and start squares are safe). A 6, a capture or a token home gives you another roll – three 6s in a row lose the turn. The host chooses a 4- or 6-colour board and whether colours nobody sits on are played by the computer or left empty. A player who leaves or is kicked is out and their tokens vanish.",
+  rps:"Everyone chooses ✊ rock, ✋ paper or ✌️ scissors in secret, then all throws are revealed together. With 2 players it is first to the chosen number of wins. With 3 or more, the players who lose the throw are knocked out until one is left; if all three signs (or only one) appear it is a draw and everyone throws again. Alone, you play the computer.",
   chess:"Chess for 2–4 players – the host picks how many seats the board has. Seats nobody joins are played by the computer. 2 seats: classic chess (alone you can play the computer or pass-and-play). 3 seats: hexagon board, last king standing wins. 4 seats: cross board, points for captures and checkmates. A checkmated player is out (their pieces slowly fade away on the hexagon, turn grey on the cross board) and can step back through the moves with ◀ ▶ to see how it happened. The host chooses the board and piece colour set."
 };
 
@@ -788,7 +906,7 @@ function saveMe(){
 
 /* ================= NETWORKING (PeerJS: the host's browser is the server) ================= */
 const NET={peer:null,role:null,code:"",conns:{},hostConn:null,R:null,timer:null,leaving:false,settled:false,local:false,abortJoin:null};
-const OFFLINE_OK={number:1,chess:1};
+const OFFLINE_OK={number:1,chess:1,ludo:1,rps:1};
 function genCode(){ const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<5;i++) s+=a[Math.floor(Math.random()*a.length)]; return s; }
 function needPeer(retry){
   if(typeof Peer!=="undefined") return true;
@@ -965,7 +1083,10 @@ function removePlayer(R,pid){
 function kickPlayer(R,pid){
   const p=R.players.find(x=>x.pid===pid&&!x.left); if(!p||pid===R.hostPid) return;
   const c=NET.conns[pid]; if(c&&c.open){ try{ c.send({t:"kicked"}); }catch(e){} }
-  if(R.phase==="play") ejPush(R,ejItem(R,pid,{eb:"KICKED OUT",h:"{n} {was} kicked out by the host!",s:"The host removed them from the room.",tone:"bad"}));
+  if(R.phase==="play"){
+    const peek=R.game==="chess"||R.game==="ludo", vanish=peek&&R.g&&R.g.kind!=="rps";
+    ejPush(R,ejItem(R,pid,{eb:"KICKED OUT",h:"{n} {was} kicked out by the host!",s:"The host removed them from the room."+(vanish?" Their "+(R.game==="chess"?"pieces":"tokens")+" vanish from the board.":""),tone:"bad",peek}));
+  }
   R._kick=pid; try{ removePlayer(R,pid); } finally { R._kick=null; }
 }
 
@@ -981,6 +1102,9 @@ function viewFor(R,pid){
 function gameView(R,pid){
   const g=R.g;
   if(g.kind==="ch") return chView(R,pid);
+  if(g.kind==="db") return JSON.parse(JSON.stringify(g));
+  if(g.kind==="lu"){ const v=JSON.parse(JSON.stringify(g)); v.ghosts=v.ghosts.filter(x=>Date.now()-x.at<5600); return v; }
+  if(g.kind==="rps") return rpsView(R,pid);
   if(g.kind==="spy"){
     const v={kind:"spy",phase:g.phase,ids:g.ids,clues:g.clues,cyc:g.cyc,turn:g.turn,deadline:g.deadline,locked:g.locked,
       elim:g.elim,last:g.last,caller:g.caller,
@@ -1071,12 +1195,16 @@ function doAct(R,pid,m){
   else if(R.game==="spy") spyAct(R,pid,m);
   else if(R.game==="number") numAct(R,pid,m);
   else if(R.game==="Scribblio") skAct(R,pid,m);
+  else if(R.game==="dots") dbAct(R,pid,m);
+  else if(R.game==="ludo") luAct(R,pid,m);
+  else if(R.game==="rps") rpsAct(R,pid,m);
   else rrAct(R,pid,m);
 }
-const maxPlayers=R=>R.game==="chess"?(+R.settings.players||2):MAXP[R.game];
+const maxPlayers=R=>R.game==="chess"?(+R.settings.players||2):R.game==="ludo"?(+R.settings.board||4):MAXP[R.game];
 function setSetting(R,k,v){
   const f=SETTINGS[R.game].find(x=>x.k===k); if(!f) return;
   if(R.game==="chess"&&k==="players"){ const n=R.players.filter(p=>!p.left).length; if(+v<n) return tell(R,R.hostPid,`${n} people are already in the room – kick someone first to use fewer seats.`); }
+  if(R.game==="ludo"&&k==="board"){ const n=R.players.filter(p=>!p.left).length; if(+v<n) return tell(R,R.hostPid,`${n} people are already in the room – kick someone first to use the smaller board.`); }
   const opts=(typeof f.o==="function"?f.o(MAXP[R.game]):f.o).map(o=>Array.isArray(o)?o[0]:o);
   const hit=opts.find(o=>String(o)===String(v)); if(hit===undefined) return;
   R.settings[k]=hit;
@@ -1097,6 +1225,7 @@ function startGame(R,m){
     }
     st.spies=Math.max(1,Math.min(st.spies,spyMax(act.length)));
   }
+  if(R.game==="ludo"&&R.settings.fill==="empty"&&act.length<2) return tell(R,R.hostPid,"With empty colours left empty you need at least 2 players – or let the computer play the other colours.");
   if(R.game==="Scribblio"&&R.settings.src==="custom"){
     const seen=new Set(), words=[];
     String(m.words||"").split(/[,;\n]+/).forEach(w=>{ w=w.trim().replace(/\s+/g," ").slice(0,30); const k=w.toLowerCase(); if(w&&!seen.has(k)){ seen.add(k); words.push(w); } });
@@ -1106,7 +1235,7 @@ function startGame(R,m){
   }
   R.round=1; R.scores={}; R.base={}; R.hist=[]; R.msg=null; R.phase="play"; deal(R);
 }
-function deal(R){ R.deal=(R.deal||Date.now())+1; if(R.game==="chess") chDeal(R); else if(R.game==="spy") spyDeal(R); else if(R.game==="number") numDeal(R); else if(R.game==="Scribblio") skDeal(R); else rrDeal(R); }
+function deal(R){ R.deal=(R.deal||Date.now())+1; if(R.game==="chess") chDeal(R); else if(R.game==="spy") spyDeal(R); else if(R.game==="number") numDeal(R); else if(R.game==="Scribblio") skDeal(R); else if(R.game==="dots") dbDeal(R); else if(R.game==="ludo") luDeal(R); else if(R.game==="rps") rpsDeal(R); else rrDeal(R); }
 function abort(R,msg,leaver){
   // "too few players" scene: the player who left is ejected (unless the host kicked them – that scene is already queued), then the room is shown
   ejPush(R,{none:true,eb:"NOT ENOUGH PLAYERS",h:"Less players than required.",s:"Taking you to the room…",tone:"bad",T:7000});
@@ -1116,11 +1245,12 @@ function abort(R,msg,leaver){
 function afterLeave(R,pid){
   const g=R.g; if(!g||g.phase==="reveal") return;
   const act=R.players.filter(p=>!p.left);
-  if(R._kick!==pid&&R.players.some(x=>x.pid===pid))       // someone walked out: airlock scene for everyone (a kick queues its own)
-    ejPush(R,ejItem(R,pid,{eb:"PLAYER LEFT",h:"{n} abandoned ship.",s:R.game==="chess"?"A computer takes over their pieces.":"They left the game.",tone:"bad"}));
-  if(R.game==="chess"){
-    g.seats.forEach((s,i)=>{ if(s.pid===pid&&!s.bot) chTakeover(R,i); });
-    chAbortCheck(R);
+  if(R.game==="chess") chLeave(R,pid,"left");              // pieces are removed; the scenes are queued there
+  else if(R.game==="ludo") luOut(R,pid);
+  else if(R.game==="rps") rpsOut(R,pid);
+  else if(R._kick!==pid&&R.players.some(x=>x.pid===pid))   // someone walked out: airlock scene for everyone (a kick queues its own)
+    ejPush(R,ejItem(R,pid,{eb:"PLAYER LEFT",h:"{n} abandoned ship.",s:"They left the game.",tone:"bad"}));
+  if(R.game==="chess"||R.game==="ludo"||R.game==="rps"){
   } else if(R.game==="spy"){
     const spiesLeft=g.ids.filter(x=>g.roles[x]==="spy"&&!isLeft(R,x));
     if(act.length<3||!spiesLeft.length) abort(R,"A player left, so the game was stopped (Spy needs at least 3 players and a spy).",pid);
@@ -1133,6 +1263,9 @@ function afterLeave(R,pid){
     if(act.length<2) abort(R,"A player left, so the game was stopped (Scribblio needs at least 2 players).",pid);
     else if(pid===g.drawer) skEndTurn(R,true);
     else skCheckAll(R);
+  } else if(R.game==="dots"){
+    if(act.length<2) abort(R,"A player left, so the game was stopped (Dots and Boxes needs at least 2 players).",pid);
+    else if(g.ids[g.turn]===pid) dbNext(R);
   } else {
     const role=g.roles[pid]!=null?RR_ROLES[g.roles[pid]].key:null;
     if(act.length<3) abort(R,"A player left, so the game was stopped (Raja Rani needs at least 3 players).",pid);
@@ -1142,7 +1275,7 @@ function afterLeave(R,pid){
 function hostTick(){
   const R=NET.R; if(!R||R.phase!=="play"||!R.g||(R.g.phase==="reveal"&&R.game!=="Scribblio")) return;
   let ch=false; const now=Date.now();
-  try{ ch=R.game==="chess"?chTick(R,now):R.game==="spy"?spyTick(R,now):R.game==="number"?numTick(R,now):R.game==="Scribblio"?skTick(R,now):rrTick(R,now); }catch(e){ sysReport(e,"game"); }
+  try{ ch=R.game==="chess"?chTick(R,now):R.game==="spy"?spyTick(R,now):R.game==="number"?numTick(R,now):R.game==="Scribblio"?skTick(R,now):R.game==="dots"?dbTick(R,now):R.game==="ludo"?luTick(R,now):R.game==="rps"?rpsTick(R,now):rrTick(R,now); }catch(e){ sysReport(e,"game"); }
   if(ch) pushState();
 }
 function addScore(R,pts){ Object.keys(pts).forEach(pid=>{ R.scores[pid]=(R.scores[pid]||0)+pts[pid]; }); }
@@ -1314,6 +1447,278 @@ function numTick(R,now){
   }
   if(g.deadline&&now>g.deadline){ g.history.push({pid:cur,timeout:true}); numNext(R); return true; }
   return false;
+}
+
+/* ---------- DOTS AND BOXES ----------
+   A grid of dots (cols x rows). On your turn you roll the dice and may draw that many lines.
+   The line that closes a box claims it – the box gets the player's emoji. Every player has a different emoji.
+   Horizontal line (r,c) sits between dots (r,c) and (r,c+1): index r*(cols-1)+c.  Vertical line (r,c) sits between dots (r,c) and (r+1,c): index r*cols+c.
+   hl / vl hold 0 (free) or the owner's position in g.ids + 1. boxes[r*(cols-1)+c] holds the same. */
+const DB_MARKS=["🦄","🐙","🦉","🐵","🐰","🐻","🐨","🐧","🦋","🐢","🐳","🦖","🐝","🦀","🐞","🦒","🐘","🦜","🐬","🦈"];
+function dbMarks(R,pids){
+  const pool=EMOJIS.concat(DB_MARKS), used=new Set(), marks={};
+  pids.forEach(pid=>{ const p=R.players.find(x=>x.pid===pid); if(p&&!used.has(p.av)){ marks[pid]=p.av; used.add(p.av); } });
+  pids.forEach(pid=>{ if(!marks[pid]){ const e=pool.find(x=>!used.has(x)); marks[pid]=e; used.add(e); } });
+  return marks;
+}
+function dbDeal(R){
+  const st=R.settings, act=R.players.filter(p=>!p.left).map(p=>p.pid);
+  const cols=+st.cols, rows=+st.rows, rot=(R.round-1)%act.length, ids=act.slice(rot).concat(act.slice(0,rot));
+  const counts={}; ids.forEach(p=>counts[p]=0);
+  R.g={kind:"db",phase:"roll",ids,cols,rows,hl:Array(rows*(cols-1)).fill(0),vl:Array((rows-1)*cols).fill(0),boxes:Array((rows-1)*(cols-1)).fill(0),
+    marks:dbMarks(R,act),counts,turn:0,dice:[],total:0,left:0,rid:0,rollAt:0,last:null,note:null,
+    deadline:st.turnTime?Date.now()+st.turnTime*1000:0,res:null};
+}
+function dbNext(R,note){
+  const g=R.g, st=R.settings, n=g.ids.length;
+  for(let k=1;k<=n;k++){
+    const i=(g.turn+k)%n;
+    if(isLeft(R,g.ids[i])) continue;
+    g.turn=i; break;
+  }
+  g.phase="roll"; g.left=0; g.note=note||null;
+  g.deadline=st.turnTime?Date.now()+st.turnTime*1000:0;
+}
+function dbBoxEdges(g,r,c){            // [free-line check] edges of box (r,c) as [array, index]
+  const w=g.cols-1;
+  return [[g.hl,r*w+c],[g.hl,(r+1)*w+c],[g.vl,r*g.cols+c],[g.vl,r*g.cols+c+1]];
+}
+function dbAct(R,pid,m){
+  const g=R.g, st=R.settings;
+  if(g.phase==="reveal"||g.ids[g.turn]!==pid) { if(m.a==="dbroll"||m.a==="dbline") tell(R,pid,"It's not your turn."); return; }
+  if(m.a==="dbroll"&&g.phase==="roll"){
+    g.dice=Array.from({length:+st.dice},()=>1+Math.floor(Math.random()*6));
+    g.total=g.dice.reduce((a,b)=>a+b,0); g.left=g.total; g.rid++; g.rollAt=Date.now(); g.note=null; g.phase="draw";
+    g.deadline=st.turnTime?Date.now()+st.turnTime*1000:0;
+  } else if(m.a==="dbline"&&g.phase==="draw"){
+    const horiz=m.t==="h", arr=horiz?g.hl:g.vl, i=+m.i;
+    if(!Number.isInteger(i)||i<0||i>=arr.length) return;
+    if(arr[i]) return tell(R,pid,"That line is already drawn.");
+    arr[i]=g.turn+1; g.last={t:m.t,i}; g.left--;
+    const w=g.cols-1, cand=horiz?[[Math.floor(i/w)-1,i%w],[Math.floor(i/w),i%w]]:[[Math.floor(i/g.cols),i%g.cols-1],[Math.floor(i/g.cols),i%g.cols]];
+    let won=0;
+    cand.forEach(([r,c])=>{
+      if(r<0||c<0||r>=g.rows-1||c>=w||g.boxes[r*w+c]) return;
+      if(dbBoxEdges(g,r,c).every(([a,k])=>a[k])){ g.boxes[r*w+c]=g.turn+1; g.counts[pid]++; won++; }
+    });
+    if(won&&st.bonus) g.left+=1;
+    if(g.boxes.every(x=>x)) return dbEnd(R);
+    if(g.left<=0) dbNext(R);
+  }
+}
+function dbEnd(R){
+  const g=R.g, pts={}; g.ids.forEach(p=>pts[p]=g.counts[p]||0);
+  const max=Math.max(0,...Object.values(pts)), winners=g.ids.filter(p=>pts[p]===max&&max>0);
+  addScore(R,pts);
+  g.res={pts,winners,max}; g.phase="reveal"; g.deadline=0; g.left=0;
+}
+function dbTick(R,now){
+  const g=R.g; if(g.phase==="reveal") return false;
+  const cur=g.ids[g.turn];
+  if(gone(R,cur)){
+    const t=g.turn; dbNext(R);
+    return g.turn!==t;                                  // nobody else to pass to: just wait
+  }
+  if(g.deadline&&now>g.deadline){ dbNext(R,"⏱ "+skPn(R,cur)+" ran out of time – turn skipped."); return true; }
+  return false;
+}
+
+/* ---------- LUDO ----------
+   C colours on a ring of 13*C squares (C = 4 or 6). A seat's start square is 13*c+7; its home column leaves the ring from square 13*c+6.
+   A token's pos: -1 = in the yard, 0..L-2 = squares travelled along the ring from the start, L-1..L+3 = the 5 home-column squares, L+4 = home.
+   Start squares and the ★ square 8 further on are safe. A 6 brings a token out; a 6, a capture or a token home gives another roll; three 6s in a row lose the turn.
+   A seat belongs to a human (pid), the computer (bot) or - when the host leaves colours empty - nobody. Someone who leaves / is kicked is out: their tokens vanish. */
+const LU_COL=["#ff5468","#3ddc84","#ffd23f","#4aa3ff","#b57bff","#ff9a3c"];
+const LU_NAME=["Red","Green","Yellow","Blue","Purple","Orange"];
+const LU_SPREAD={4:[[0],[0,2],[0,1,2],[0,1,2,3]],6:[[0],[0,3],[0,2,4],[0,1,3,4],[0,1,2,3,4],[0,1,2,3,4,5]]};
+const luL=g=>13*g.C, luFin=g=>13*g.C+4;
+const luCellOf=(g,s,pos)=>(13*s.c+7+pos)%luL(g);
+const luSafe=cell=>cell%13===7||cell%13===2;
+const luName=(R,s)=>s.bot?LU_NAME[s.c]+" (computer)":skPn(R,s.pid);
+function luDeal(R){
+  const st=R.settings, C=+st.board===6?6:4, humans=R.players.filter(p=>!p.left).map(p=>p.pid).slice(0,C), n=humans.length;
+  const rot=(R.round-1)%n, order=shuffle(humans.slice(rot).concat(humans.slice(0,rot))), corners=LU_SPREAD[C][n-1], seats=[];
+  let k=0;
+  for(let c=0;c<C;c++){
+    if(corners.includes(c)) seats.push({c,pid:order[k++],bot:false,out:false,fin:false,tok:[-1,-1,-1,-1],done:0});
+    else if(st.fill!=="empty") seats.push({c,pid:null,bot:true,out:false,fin:false,tok:[-1,-1,-1,-1],done:0});
+  }
+  R.g={kind:"lu",phase:"roll",C,seats,turn:0,die:0,rid:0,rollAt:0,sixes:0,movable:[],hit:null,last:null,note:null,rank:[],ghosts:[],deadline:0,botAt:0,until:0,res:null};
+  luArm(R);
+}
+function luArm(R){ const g=R.g, t=+R.settings.turnTime, now=Date.now(); g.deadline=t?now+t*1000:0; g.botAt=now+700+Math.floor(Math.random()*500); }
+function luWait(g){ g.phase="wait"; g.until=Date.now()+1500; g.deadline=0; }
+function luMoves(g,s,die){ const F=luFin(g), out=[]; s.tok.forEach((p,t)=>{ if(p===-1){ if(die===6) out.push(t); } else if(p+die<=F) out.push(t); }); return out; }
+function luNext(R){
+  const g=R.g, n=g.seats.length;
+  for(let k=1;k<=n;k++){ const i=(g.turn+k)%n, s=g.seats[i]; if(!s.out&&!s.fin){ g.turn=i; break; } }
+  g.sixes=0; g.phase="roll"; g.movable=[]; luArm(R);
+}
+function luRoll(R){
+  const g=R.g, s=g.seats[g.turn];
+  g.die=1+Math.floor(Math.random()*6); g.rid++; g.rollAt=Date.now(); g.hit=null; g.last=null; g.note=null;
+  g.sixes=g.die===6?g.sixes+1:0;
+  if(g.sixes>=3){ g.note="🎲 "+luName(R,s)+" rolled three 6s in a row – the turn is lost."; g.movable=[]; return luWait(g); }
+  g.movable=luMoves(g,s,g.die);
+  if(!g.movable.length){ g.note="🚫 "+luName(R,s)+" has no move with a "+g.die+"."; return luWait(g); }
+  g.phase="move"; luArm(R);
+}
+function luPick(g,s,lvl){
+  if(lvl<2) return g.movable[Math.floor(Math.random()*g.movable.length)];
+  const L=luL(g), F=luFin(g); let best=-1e9, bt=g.movable[0];
+  const onCell=(o,cell)=>o.tok.some(q=>q>=0&&q<=L-2&&luCellOf(g,o,q)===cell);
+  g.movable.forEach(t=>{
+    const p=s.tok[t], to=p===-1?0:p+g.die; let sc=to+Math.random();
+    if(to===F) sc+=200; else if(to>=L-1) sc+=40;
+    if(p===-1) sc+=60;
+    if(to<=L-2){
+      const cell=luCellOf(g,s,to);
+      if(luSafe(cell)) sc+=25;
+      else if(g.seats.some(o=>o!==s&&!o.out&&onCell(o,cell))) sc+=120;
+      else if(g.seats.some(o=>o!==s&&!o.out&&o.tok.some(q=>{ if(q<0||q>L-2) return false; const d=(cell-luCellOf(g,o,q)+L)%L; return d>=1&&d<=6; }))) sc-=30;
+    }
+    if(p>=0&&p<=L-2&&!luSafe(luCellOf(g,s,p))) sc+=10;
+    if(sc>best){ best=sc; bt=t; }
+  });
+  return bt;
+}
+function luMove(R,t){
+  const g=R.g, s=g.seats[g.turn], L=luL(g), F=luFin(g);
+  const from=s.tok[t], to=from===-1?0:from+g.die; s.tok[t]=to;
+  g.last={c:s.c,t,from,to,at:Date.now()};
+  let extra=g.die===6, victims=0, cell=-1;
+  if(to<=L-2){
+    cell=luCellOf(g,s,to);
+    if(!luSafe(cell)) g.seats.forEach(o=>{
+      if(o===s||o.out) return;
+      o.tok.forEach((q,k)=>{ if(q>=0&&q<=L-2&&luCellOf(g,o,q)===cell){ o.tok[k]=-1; victims++; g.note="💥 "+luName(R,s)+" sent "+luName(R,o)+"'s token back to the yard!"; } });
+    });
+  }
+  if(victims){ extra=true; g.hit={cell,by:s.c,n:victims,at:Date.now()}; }
+  if(to===F){ s.done++; extra=true; if(s.done===4){ s.fin=true; g.rank.push(g.turn); extra=false; g.note="🏁 "+luName(R,s)+" has all four tokens home!"; } }
+  if(luCheckEnd(R)) return;
+  if(extra&&!s.fin){ g.phase="roll"; g.movable=[]; luArm(R); } else luNext(R);
+}
+function luCheckEnd(R){
+  const g=R.g, rem=g.seats.filter(s=>!s.out&&!s.fin);
+  if(rem.length>1&&rem.some(s=>!s.bot)) return false;
+  luEnd(R); return true;
+}
+function luEnd(R){
+  const g=R.g, prog=s=>s.tok.reduce((a,p)=>a+p+1,0);
+  const rest=g.seats.map((s,i)=>i).filter(i=>!g.seats[i].out&&!g.seats[i].fin).sort((a,b)=>prog(g.seats[b])-prog(g.seats[a]));
+  const order=g.rank.concat(rest), n=order.length, pts={};
+  order.forEach((i,k)=>{ const s=g.seats[i]; if(s.pid) pts[s.pid]=n-1-k; });
+  addScore(R,pts);
+  g.res={order:order.map(i=>g.seats[i].c),pts,winner:order.length?g.seats[order[0]].c:null};
+  g.phase="reveal"; g.deadline=0; g.movable=[];
+}
+function luAct(R,pid,m){
+  const g=R.g; if(g.phase==="reveal") return;
+  const s=g.seats[g.turn];
+  if(m.a!=="ludoroll"&&m.a!=="ludomove") return;
+  if(g.phase==="wait") return;
+  if(s.bot||s.pid!==pid) return tell(R,pid,"It's not your turn.");
+  if(m.a==="ludoroll"&&g.phase==="roll") luRoll(R);
+  else if(m.a==="ludomove"&&g.phase==="move"){ const t=+m.t; if(g.movable.includes(t)) luMove(R,t); }
+}
+function luTick(R,now){
+  const g=R.g; if(g.phase==="reveal") return false;
+  if(g.phase==="wait"){ if(now>=g.until){ luNext(R); return true; } return false; }
+  const s=g.seats[g.turn], auto=s.bot||gone(R,s.pid);
+  if(!((auto&&now>=g.botAt)||(g.deadline&&now>g.deadline))) return false;
+  if(g.phase==="roll") luRoll(R); else luMove(R,luPick(g,s,s.bot?(+R.settings.level||2):2));
+  return true;
+}
+/* a player who leaves or is kicked is out: their tokens are removed (they fade away on everyone's board) */
+function luOut(R,pid){
+  const g=R.g; if(!g||g.phase==="reveal") return;
+  const i=g.seats.findIndex(s=>s.pid===pid&&!s.out); if(i<0) return;
+  const s=g.seats[i];
+  if(R._kick!==pid) ejPush(R,ejItem(R,pid,{eb:"PLAYER LEFT",h:"{n} abandoned ship.",s:"Their tokens vanish from the board.",col:LU_COL[s.c],tone:"bad",peek:true}));
+  g.ghosts.push({c:s.c,tok:s.tok.slice(),at:Date.now()});
+  s.out=true; s.tok=[];
+  if(!g.seats.some(x=>x.pid&&!x.out)){ abort(R,"Everyone left, so the Ludo game was stopped."); return; }
+  if(luCheckEnd(R)) return;
+  if(g.turn===i) luNext(R);
+}
+
+/* ---------- ROCK PAPER SCISSORS ----------
+   Everyone throws in secret, then all throws are shown together. Exactly two different signs -> the winning sign scores.
+   2 players: first to <target> throw wins takes the match.  3+ players: the losers of a throw are out until one player is left.
+   All three signs (or only one) = draw, throw again. 0 rock, 1 paper, 2 scissors: x beats (x+2)%3.  Computers fill in so a lone player has an opponent. */
+const RPS_BEATS=(a,b)=>(a+2)%3===b;
+function rpsDeal(R){
+  const st=R.settings, hum=R.players.filter(p=>!p.left).map(p=>({id:p.pid,pid:p.pid,name:p.name,av:p.av,bot:false,out:false,pts:0}));
+  const cpu=Math.max(+st.cpu||0,2-hum.length), ent=hum.slice();
+  for(let i=0;i<cpu&&ent.length<MAXP.rps;i++) ent.push({id:"cpu"+(i+1),pid:null,name:"Computer"+(cpu>1?" "+(i+1):""),av:"🤖",bot:true,out:false,pts:0});
+  R.g={kind:"rps",phase:"pick",ent,throws:0,picks:{},last:null,target:ent.length===2?(+st.target||1):0,deadline:0,until:0,res:null};
+  rpsRound(R);
+}
+const rpsAlive=g=>g.ent.filter(e=>!e.out);
+function rpsRound(R){
+  const g=R.g, t=+R.settings.throwTime; g.phase="pick"; g.picks={};
+  g.deadline=t?Date.now()+t*1000:0;
+  rpsAlive(g).forEach(e=>{ if(e.bot) g.picks[e.id]=Math.floor(Math.random()*3); });
+  rpsCheck(R);                                         // only computers left (the humans are out): throw straight away
+}
+function rpsAct(R,pid,m){
+  const g=R.g; if(m.a!=="rpsthrow"||g.phase!=="pick") return;
+  const e=g.ent.find(x=>x.pid===pid); if(!e||e.out||g.picks[pid]!==undefined) return;
+  const v=+m.v; if(!(v===0||v===1||v===2)) return;
+  g.picks[pid]=v; rpsCheck(R);
+}
+function rpsCheck(R){
+  const g=R.g; if(g.phase!=="pick") return;
+  if(rpsAlive(g).every(e=>g.picks[e.id]!==undefined)) rpsResolve(R);
+}
+function rpsResolve(R){
+  const g=R.g, al=rpsAlive(g), kinds=[...new Set(al.map(e=>g.picks[e.id]))];
+  g.throws++; g.phase="show"; g.deadline=0; g.until=Date.now()+3600;
+  const shown={}; al.forEach(e=>{ shown[e.id]=g.picks[e.id]; });
+  let win=null, draw=true;
+  if(kinds.length===2){ draw=false; win=RPS_BEATS(kinds[0],kinds[1])?kinds[0]:kinds[1]; }
+  const winners=draw?[]:al.filter(e=>g.picks[e.id]===win).map(e=>e.id), losers=draw?[]:al.filter(e=>g.picks[e.id]!==win).map(e=>e.id);
+  winners.forEach(id=>{ g.ent.find(e=>e.id===id).pts++; });
+  if(!draw&&!g.target) losers.forEach(id=>{ g.ent.find(e=>e.id===id).out=true; });
+  g.last={shown,draw,winners,losers,knock:!draw&&!g.target,at:Date.now()};
+}
+function rpsNext(R){
+  const g=R.g, al=rpsAlive(g);
+  if(g.target){ const top=g.ent.find(e=>e.pts>=g.target); if(top) return rpsEnd(R,top.id); }
+  else if(al.length<=1) return rpsEnd(R,al.length?al[0].id:null);
+  rpsRound(R);
+}
+function rpsEnd(R,winId){
+  const g=R.g, w=g.ent.find(e=>e.id===winId), pts={};
+  if(w&&w.pid) pts[w.pid]=1;
+  addScore(R,pts);
+  g.res={winner:winId,pts}; g.phase="reveal"; g.deadline=0;
+}
+function rpsTick(R,now){
+  const g=R.g; if(g.phase==="reveal") return false;
+  if(g.phase==="show"){ if(now>=g.until){ rpsNext(R); return true; } return false; }
+  const late=g.deadline&&now>g.deadline; let ch=false;
+  rpsAlive(g).forEach(e=>{ if(g.picks[e.id]===undefined&&(late||(!e.bot&&gone(R,e.pid)))){ g.picks[e.id]=Math.floor(Math.random()*3); ch=true; } });
+  if(ch) rpsCheck(R);
+  return ch;
+}
+function rpsOut(R,pid){
+  const g=R.g; if(!g||g.phase==="reveal") return;
+  const e=g.ent.find(x=>x.pid===pid); if(!e||e.out) return;
+  e.out=true; delete g.picks[pid];
+  if(R._kick!==pid) ejPush(R,ejItem(R,pid,{eb:"PLAYER LEFT",h:"{n} abandoned ship.",s:"They left the game.",tone:"bad",peek:true}));
+  if(!g.ent.some(x=>x.pid&&!x.out)){ abort(R,"Everyone left, so the game was stopped."); return; }
+  const al=rpsAlive(g);
+  if(g.phase==="show"){ if(g.last) g.last.winners=g.last.winners.filter(i=>i!==e.id); return; }
+  if(al.length<=1){ rpsEnd(R,al.length?al[0].id:null); return; }
+  rpsCheck(R);
+}
+function rpsView(R,pid){
+  const g=R.g, v={kind:"rps",phase:g.phase,ent:g.ent,throws:g.throws,target:g.target,deadline:g.deadline,last:g.last,res:g.res,
+    picked:Object.keys(g.picks),mine:g.picks[pid]===undefined?null:g.picks[pid]};
+  if(g.phase!=="pick"&&g.last) v.shown=g.last.shown;
+  return v;
 }
 
 /* ---------- RAJA RANI ---------- */
@@ -1981,6 +2386,19 @@ function chTakeover(R,i){
   g.seats[i]={bot:true,lvl:R.settings.level||2}; g.rem[i]=0; g.drawBy=null; g.botBusy=false;
   if(g.P.turn===i) g.tAt=Date.now();
 }
+/* A human who leaves, is kicked or loses their connection is OUT: their pieces are removed from the board (they fade away) and the
+   others carry on. On the 2-player board that simply ends the game. If fewer than 2 humans would remain in a multiplayer game, it stops. */
+function chLeave(R,pid,why){
+  const g=R.g; if(!g||g.phase==="reveal") return;
+  const idx=[]; g.seats.forEach((s,i)=>{ if(s.pid===pid&&!s.bot) idx.push(i); });
+  if(!idx.length) return;
+  const lost=why==="lost", gen=()=>{ if(lost||R._kick!==pid) ejPush(R,ejItem(R,pid,lost?{eb:"SIGNAL LOST",h:"{n} lost connection.",s:"Their pieces vanish from the board.",tone:"bad",peek:true}:{eb:"PLAYER LEFT",h:"{n} abandoned ship.",s:"They left the game.",tone:"bad",peek:g.P.np>=3})); };
+  if(g.multi&&g.seats.filter((s,i)=>!s.bot&&!idx.includes(i)).length<2){ gen(); abort(R,"A player left, so the chess game was stopped (a multiplayer game needs at least 2 people)."); return; }
+  if(g.P.np<3) gen();
+  idx.forEach(i=>{ if(g.P.alive[i]) chEliminate(R,i,"left"); g.seats[i]={bot:true,out:true,pid}; g.rem[i]=0; });
+  g.drawBy=null; g.botBusy=false;
+  chResolve(R);
+}
 function chAbortCheck(R){
   const g=R.g; if(!g||!g.multi||g.phase==="reveal") return false;
   if(g.seats.filter(s=>!s.bot).length<2){ abort(R,"A player left, so the chess game was stopped (a multiplayer game needs at least 2 people)."); return true; }
@@ -2024,9 +2442,10 @@ function chDeal(R){
 function chEliminate(R,p,why,credit){
   const g=R.g,P=g.P,B=P.B; if(!P.alive[p]) return;
   P.alive[p]=false; g.elim.push({seat:p,why,ply:P.ply});
-  if(!B.dead) (g.ghosts=g.ghosts||[]).push({seat:p,b:chSnapStr(P),at:Date.now()});   // hexagon: the pieces fade out slowly instead of vanishing
+  const grey=B.dead&&why!=="left";                                      // cross board: a checkmated player's pieces turn grey; a player who LEFT has them removed
+  if(!grey) (g.ghosts=g.ghosts||[]).push({seat:p,b:chSnapStr(P),at:Date.now()});   // the pieces fade out slowly instead of vanishing
   if(B.np===4){ if(why==="mate"&&credit!=null&&credit!==p) P.pts[credit]+=20; else if(why==="stalemate") P.pts[p]+=20; }
-  for(let c=0;c<B.N;c++) if(P.O[c]===p){ if(B.dead) P.O[c]=CH_DEAD; else { P.T[c]=0; P.O[c]=-1; P.PR[c]=0; } }
+  for(let c=0;c<B.N;c++) if(P.O[c]===p){ if(grey) P.O[c]=CH_DEAD; else { P.T[c]=0; P.O[c]=-1; P.PR[c]=0; } }
   P.kc[p]=-1; P.cr[p]=0;
   if(P.epO===p){ P.epT=-1; P.epP=-1; P.epO=-1; }
   if(P.turn===p) P.turn=chNextAlive(P,p);
@@ -2035,9 +2454,9 @@ function chEliminate(R,p,why,credit){
     const pl=chPl(B,chTheme(R.settings),p), st=g.seats[p], left=P.alive.filter(Boolean).length;
     const sn=i=>{ const x=g.seats[i]; return x&&x.pid?skPn(R,x.pid):"Computer"; };
     const heads={mate:"{n} {was} checkmated"+(credit!=null&&credit!==p?" by "+sn(credit):"")+"!",stalemate:"{n} {was} stalemated!",time:"{n} ran out of time!",resign:"{n} resigned.",left:"{n} abandoned ship."};
-    ejPush(R,ejItem(R,st.pid,{...(st.bot?{name:"The "+pl.name+" computer",av:"🤖"}:{}),eb:pl.name.toUpperCase()+" IS OUT",h:heads[why]||"{n} {was} out!",
-      s:"Their pieces "+(B.dead?"turn into grey space debris":"vanish into the void")+" – "+left+" player"+(left===1?"":"s")+" left.",
-      col:pl.fill,tone:"neutral",wait:why==="mate"?(B.dead?3500:5200):0}));   // checkmate: let everyone see the final position (pieces fading) BEFORE the airlock scene covers the screen
+    if(!(why==="left"&&R._kick===st.pid)) ejPush(R,ejItem(R,st.pid,{...(st.bot?{name:"The "+pl.name+" computer",av:"🤖"}:{}),eb:pl.name.toUpperCase()+" IS OUT",h:heads[why]||"{n} {was} out!",
+      s:"Their pieces "+(grey?"turn into grey space debris":"vanish into the void")+" – "+left+" player"+(left===1?"":"s")+" left.",
+      col:pl.fill,tone:"neutral",peek:true,wait:why==="mate"?(B.dead?3500:5200):0}));   // checkmate: let everyone see the final position (pieces fading) BEFORE the airlock scene covers the screen
     g.grace=6500+(why==="mate"?(B.dead?3500:5200):0);                                                       // the next clock starts after the cutscene
   }
 }
@@ -2142,9 +2561,7 @@ function chTick(R,now){
   const P=g.P, p=P.turn, seat=g.seats[p];
   if(seat.bot){ if(now<g.tAt) return false; if(!g.botBusy){ g.botBusy=true; setTimeout(()=>chBotMove(R,g),450); } return false; }
   const pl=R.players.find(x=>x.pid===seat.pid);
-  if(pl&&!pl.connected&&pl.offAt&&now-pl.offAt>60000){
-    ejPush(R,ejItem(R,seat.pid,{eb:"SIGNAL LOST",h:"{n} lost connection.",s:"A computer takes over their pieces.",tone:"bad"}));
-    chTakeover(R,p); chAbortCheck(R); return true; }
+  if(pl&&!pl.connected&&pl.offAt&&now-pl.offAt>60000){ chLeave(R,seat.pid,"lost"); return true; }
   if(g.clockOn&&g.rem[p]-(now-g.tAt)<=0){ g.rem[p]=0; chLose(R,p,"time"); return true; }
   return false;
 }
@@ -2152,7 +2569,7 @@ function chView(R,pid){
   const g=R.g,P=g.P;
   const nowT=Date.now();
   return {kind:"ch",snaps:g.snaps,ghosts:(g.ghosts||[]).filter(x=>nowT-x.at<5600),phase:g.phase,id:g.id,T:Array.from(P.T),O:Array.from(P.O),turn:P.turn,alive:P.alive.slice(),
-    seats:g.seats.map(s=>({pid:s.pid||null,bot:!!s.bot,lvl:s.lvl||0})),local:g.local,
+    seats:g.seats.map(s=>({pid:s.pid||null,bot:!!s.bot,out:!!s.out,lvl:s.lvl||0})),local:g.local,
     last:g.last,chk:g.checks.slice(),legal:g.legal.map(m=>[m.f,m.t,m.pr||0]),
     rem:g.clockOn?g.rem.slice():null,tAt:g.tAt,pts:P.pts.slice(),caps:g.caps,
     hist:g.hist.slice(-150),drawBy:g.drawBy,elim:g.elim,res:g.res,ply:P.ply};
@@ -2429,13 +2846,20 @@ function topbar(title,home){
 function landingHTML(){
   let h=`<header class="hero"><h1>Game Hub</h1><p>Open a room, share the code, and play with friends.</p></header>`;
   if(S.notice) h+=`<div class="msg ${S.notice.type}">${esc(S.notice.text)}</div>`;
-  h+=`<h3>Play online with a room code</h3><div class="game-grid">
+  h+=`<h3>Play online with a room code</h3><div class="game-grid g3">
     <button class="game-btn" data-a="go" data-g="number"><span class="ico">🎯</span><b>NumberGame</b><span class="d">Guess the secret number in turns. Rounds, timers and attempts are set per room.</span><span class="offb">📴 works offline</span></button>
     <button class="game-btn" data-a="go" data-g="spy"><span class="ico">🕵️</span><b>Who Is the Spy?</b><span class="d">Secret words on every screen. Cycle clues, call a vote when you suspect someone.</span></button>
     <button class="game-btn" data-a="go" data-g="raja"><span class="ico">👑</span><b>Raja Rani</b><span class="d">3–20 players. Secret roles, Police finds the Thief, multi-round scores.</span></button>
     <button class="game-btn" data-a="go" data-g="Scribblio"><span class="ico">🎨</span><b>Scribblio</b><span class="d">Draw the secret word, everyone else guesses in the chat. Hints appear as the time runs out.</span></button>
     <button class="game-btn" style="--glow:#9cc66b" data-a="go" data-g="chess"><span class="ico">♟️</span><b>Chess</b><span class="d">1–4 players. Vs computer, classic 2-player, 3-player hexagon or 4-player cross board, with clocks.</span><span class="offb">📴 works offline</span></button>
-    <button class="game-btn" data-a="goJoin"><span class="ico">🔑</span><b>Join a room</b><span class="d">Got a room code or invite link from a friend? Enter it here.</span></button>
+    <button class="game-btn" style="--glow:#ffb24d" data-a="go" data-g="dots"><span class="ico">🎲</span><b>Dots and Boxes</b><span class="d">Any number of players. Roll the dice, draw that many lines, and close boxes to stamp them with your emoji.</span></button>
+  </div>
+  <div class="game-grid g2">
+    <button class="game-btn" style="--glow:#ff5468" data-a="go" data-g="ludo"><span class="ico">🏁</span><b>Ludo</b><span class="d">Up to 6 players on a 4- or 6-colour board. Computer fills empty colours if you like.</span><span class="offb">📴 works offline</span></button>
+    <button class="game-btn" style="--glow:#4aa3ff" data-a="go" data-g="rps"><span class="ico">✊</span><b>Rock Paper Scissors</b><span class="d">Throw in secret, reveal together. Duel a friend or the computer, or knock out a crowd.</span><span class="offb">📴 works offline</span></button>
+  </div>
+  <div class="game-grid" style="margin-top:14px;grid-template-columns:minmax(0,1fr)">
+    <button class="game-btn wide" data-a="goJoin"><span class="ico">🔑</span><b>Join a room</b><span class="d">Got a room code or invite link from a friend? Enter it here.</span></button>
   </div>
   <h3 class="home-h" style="margin-top:34px">Secret draws by email</h3><div class="game-grid">
     <button class="game-btn" style="--glow:#5ee08a" data-a="goXmas"><span class="ico">🎄</span><b>ChristMom ChristChild</b><span class="d">Secretly match everyone with a Christ Child by email.</span></button>
@@ -2456,7 +2880,7 @@ function entryHTML(){
   h+=`<div class="row" style="align-items:stretch">`;
   if(S.game) h+=`<div class="card2"><h3>🆕 Create a room</h3><p class="mut" style="margin:0 0 12px">${esc(BLURB[S.game])}<br><br>You'll choose rounds, timers and other options in the lobby, then share the room code or invite link.</p>
     <button class="btn green block" data-a="create" ${S.busy||!ONLINE?"disabled":""}>Create room</button></div>`;
-  if(S.game&&OFFLINE_OK[S.game]) h+=`<div class="card2"><h3>📴 Play on this device</h3><p class="mut" style="margin:0 0 12px">No internet needed – ${S.game==="chess"?"play the computer, or pass the device around.":"practise the Number Game on your own."}<br><br>Nothing is shared with other players.</p>
+  if(S.game&&OFFLINE_OK[S.game]) h+=`<div class="card2"><h3>📴 Play on this device</h3><p class="mut" style="margin:0 0 12px">No internet needed – ${S.game==="chess"?"play the computer, or pass the device around.":S.game==="ludo"?"play Ludo against the computer.":S.game==="rps"?"play Rock Paper Scissors against the computer.":"practise the Number Game on your own."}<br><br>Nothing is shared with other players.</p>
     <button class="btn block" data-a="createLocal">Start offline game</button></div>`;
   h+=`<div class="card2"><h3>🔑 Join a room</h3><label>Room code</label>
     <input type="text" id="joinCode" data-keep maxlength="6" placeholder="ABCDE" autocomplete="off" style="text-transform:uppercase;letter-spacing:.25em;font-size:1.2rem" value="${esc(S.ui.joinCode||"")}">
@@ -2494,14 +2918,14 @@ function roomHTML(){
     <div class="scoreboard" style="margin:0">${v.players.map(p=>`<span class="chip ${p.connected?"":"off"} ${p.left?"gone":""}">${p.av} ${esc(p.name)}${p.pid===v.hostPid?" 👑":""}${p.pid===v.me?" (you)":""}${p.left?" · left":!p.connected?" · offline":""}${kickBtn(v,p)}</span>`).join("")}</div></div>`;
   if(v.phase==="lobby") return h+lobbyHTML(v,host);
   if(v.phase==="end") return h+endHTML(v,host);
-  return h+(v.game==="spy"?spyGameHTML(v):v.game==="number"?numGameHTML(v):v.game==="Scribblio"?"":v.game==="chess"?chessGameHTML(v):rrGameHTML(v));
+  return h+(v.game==="spy"?spyGameHTML(v):v.game==="number"?numGameHTML(v):v.game==="Scribblio"?"":v.game==="chess"?chessGameHTML(v):v.game==="dots"?dbGameHTML(v):v.game==="ludo"?luGameHTML(v):v.game==="rps"?rpsGameHTML(v):rrGameHTML(v));
 }
 const kickBtn=(v,p)=>v.me===v.hostPid&&p.pid!==v.hostPid&&!p.left&&!NET.local?`<button type="button" class="kick" data-a="kick" data-pid="${esc(p.pid)}" title="Kick ${esc(p.name)} from the room" aria-label="Kick ${esc(p.name)}">✖</button>`:"";
 function lobbyHTML(v,host){
   const st=v.settings, n=v.players.filter(p=>!p.left).length, fields=SETTINGS[v.game].filter(f=>!f.when||f.when(n,st));
   let h="";
   if(v.msg) h+=`<div class="msg warn">${esc(v.msg)}</div>`;
-  h+=`<p class="mut" style="margin:14px 0 0">${esc(BLURB[v.game])}</p>${v.game==="chess"?`<div class="msg info" style="margin-top:12px">♟️ <b>${st.players==3?"3 seats – hexagon board, last king standing":st.players==4?"4 seats – cross board, points for captures and checkmates":"2 seats – classic 8×8 chess"}</b> · ${n} human${n===1?"":"s"}${st.players>n?` + ${st.players-n} computer${st.players-n===1?"":"s"}`:""}<br><span class="mut">The host picks the number of players. Seats nobody joins are played by the computer.</span></div>`:""}<h3 style="margin-top:18px">⚙️ Room settings</h3>`;
+  h+=`<p class="mut" style="margin:14px 0 0">${esc(BLURB[v.game])}</p>${v.game==="chess"?`<div class="msg info" style="margin-top:12px">♟️ <b>${st.players==3?"3 seats – hexagon board, last king standing":st.players==4?"4 seats – cross board, points for captures and checkmates":"2 seats – classic 8×8 chess"}</b> · ${n} human${n===1?"":"s"}${st.players>n?` + ${st.players-n} computer${st.players-n===1?"":"s"}`:""}<br><span class="mut">The host picks the number of players. Seats nobody joins are played by the computer.</span></div>`:""}${v.game==="ludo"?`<div class="msg info" style="margin-top:12px">🏁 <b>${st.board==6?"6-colour board":"4-colour board"}</b> · ${n} human${n===1?"":"s"}${st.fill!=="empty"&&st.board>n?` + ${st.board-n} computer${st.board-n===1?"":"s"}`:""}<br><span class="mut">Up to ${st.board} players can join. ${st.fill!=="empty"?"Colours nobody sits on are played by the computer.":"Colours nobody sits on stay empty."}</span></div>`:""}<h3 style="margin-top:18px">⚙️ Room settings</h3>`;
   if(v.game==="chess") h+=`<div style="margin-top:10px"><span class="mut">Colour set chosen by the host:</span>${chThemePreviewHTML(st.theme,st.players)}</div>`;
   if(host){
     h+=`<div class="sgrid">${fields.map(f=>{
@@ -2708,6 +3132,202 @@ function rrGameHTML(v){
     if(x.void) h+=`<div class="msg warn" style="margin-top:14px">⚠️ ${esc(x.why)}</div>`;
     else if(x.ok) h+=`<div class="msg ok" style="margin-top:14px;font-size:1.05rem">✅ Police <b>${esc(pName(v,x.pi))}</b> caught the Thief <b>${esc(pName(v,x.ti))}</b> and keeps ${RR_ROLES[x.roles[x.pi]].pts} points! 🎉</div>`;
     else h+=`<div class="msg warn" style="margin-top:14px;font-size:1.05rem">❌ Police <b>${esc(pName(v,x.pi))}</b> ${x.timeout?"ran out of time":`guessed <b>${esc(pName(v,x.guess))}</b>`}, but the Thief was <b>${esc(pName(v,x.ti))}</b>. The Thief takes the Police's ${RR_ROLES[x.roles[x.pi]].pts} points! 🦹</div>`;
+    h+=boardHTML(v)+nextControls(v,host);
+  }
+  return h;
+}
+
+/* ---- Dots and Boxes ---- */
+const dbHue=(v,pid,a)=>{ const i=Math.max(0,v.players.findIndex(p=>p.pid===pid)); return `hsla(${Math.round(i*137.508)%360},85%,62%,${a})`; };
+const DB_PIPS=[[],[4],[0,8],[0,4,8],[0,2,6,8],[0,2,4,6,8],[0,2,3,5,6,8]];
+const dbDie=(n,style)=>`<div class="db-die" style="${style}">${[...Array(9).keys()].map(k=>DB_PIPS[n].includes(k)?`<i class="p"></i>`:`<i></i>`).join("")}</div>`;
+function dbBoardHTML(v,can){
+  const g=v.g, W=g.cols-1, H=g.rows-1, U=100, P=50, vw=W*U+2*P, vh=H*U+2*P;
+  const own=k=>k?g.ids[k-1]:null;
+  let b="", l="", d="";
+  g.boxes.forEach((k,i)=>{
+    if(!k) return;
+    const r=Math.floor(i/W), c=i%W, pid=own(k);
+    b+=`<rect x="${P+c*U+5}" y="${P+r*U+5}" width="${U-10}" height="${U-10}" rx="10" fill="${dbHue(v,pid,.22)}"/><text class="db-mk" x="${P+c*U+U/2}" y="${P+r*U+U/2}" font-size="${U*.5}" text-anchor="middle" dominant-baseline="central">${esc(g.marks[pid])}</text>`;
+  });
+  const line=(t,i,x1,y1,x2,y2)=>{
+    const k=(t==="h"?g.hl:g.vl)[i], free=!k, on=can&&free, last=g.last&&g.last.t===t&&g.last.i===i;
+    const geo=`x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"`;
+    return `<g class="db-l ${free?"":"on"} ${on?"can":""} ${last?"last":""}" ${on?`data-a="dbline" data-t="${t}" data-i="${i}"`:""}>${on?`<line class="db-hit" ${geo}/>`:""}<line class="db-ln" ${geo}${free?"":` style="stroke:${dbHue(v,own(k),1)}"`}/></g>`;
+  };
+  for(let r=0;r<g.rows;r++) for(let c=0;c<W;c++) l+=line("h",r*W+c,P+c*U,P+r*U,P+(c+1)*U,P+r*U);
+  for(let r=0;r<H;r++) for(let c=0;c<g.cols;c++) l+=line("v",r*g.cols+c,P+c*U,P+r*U,P+c*U,P+(r+1)*U);
+  for(let r=0;r<g.rows;r++) for(let c=0;c<g.cols;c++) d+=`<circle class="db-dot" cx="${P+c*U}" cy="${P+r*U}" r="9"/>`;
+  return `<div class="db-wrap"><svg class="db-svg" viewBox="0 0 ${vw} ${vh}" role="img" aria-label="Dots and Boxes board">${b}${l}${d}</svg></div>`;
+}
+function dbGameHTML(v){
+  const g=v.g, st=v.settings, me=v.me, host=me===v.hostPid, cur=g.ids[g.turn], play=g.phase!=="reveal", mine=play&&cur===me;
+  const total=g.boxes.length, taken=g.boxes.filter(x=>x).length;
+  let h=`<div class="scoreboard"><span class="chip">Round ${v.round}/${st.rounds}</span><span class="chip">📦 ${taken}/${total} boxes</span>${timerHTML(play?g.deadline:0)}</div>`;
+  h+=`<div class="scoreboard">${g.ids.map(p=>`<span class="chip ${play&&p===cur?"active":""} ${pObj(v,p).left?"gone":""}" style="border-color:${dbHue(v,p,.9)}">${g.marks[p]} ${esc(pName(v,p))}${p===me?" (you)":""} · <b>${g.counts[p]}</b></span>`).join("")}</div>`;
+  if(g.note&&play) h+=`<div class="msg warn">${esc(g.note)}</div>`;
+  if(play){
+    const el=Date.now()+S.off-g.rollAt, spin=g.rid&&el<800?`animation:dbTumble .8s ease-out ${-Math.max(0,el)}ms both;`:"";
+    const dice=g.dice.length?`<div class="db-dice">${g.dice.map(n=>dbDie(n,spin)).join("")}${g.dice.length>1?`<div class="db-sum">= ${g.total}</div>`:""}</div>`:"";
+    if(g.phase==="roll"){
+      h+=mine
+        ?`<div class="msg ok">${g.marks[me]} <b>Your turn!</b> Roll the dice – you draw that many lines.</div><button class="btn green block db-roll" data-a="dbroll">🎲 Roll the dice</button>`
+        :`<div class="msg info">⏳ ${g.marks[cur]} <b>${esc(pName(v,cur))}</b> is about to roll…</div>`;
+    } else {
+      h+=dice;
+      h+=mine
+        ?`<div class="msg ok">${g.marks[me]} Draw <b>${g.left}</b> more line${g.left===1?"":"s"} – tap a line between two dots.${st.bonus?" Closing a box gives you one extra line.":""}</div>`
+        :`<div class="msg info">✏️ ${g.marks[cur]} <b>${esc(pName(v,cur))}</b> rolled ${g.total} and has <b>${g.left}</b> line${g.left===1?"":"s"} left to draw.</div>`;
+    }
+  }
+  h+=dbBoardHTML(v,mine&&g.phase==="draw");
+  if(!play){
+    const r=g.res;
+    h+=r.winners.length
+      ?`<div class="msg ok" style="font-size:1.05rem">🏆 ${r.winners.map(p=>g.marks[p]+" <b>"+esc(pName(v,p))+"</b>").join(" & ")} ${r.winners.length>1?"tie":"wins"} this round with <b>${r.max}</b> box${r.max===1?"":"es"}! 🎉</div>`
+      :`<div class="msg info">No boxes were claimed.</div>`;
+    h+=boardHTML(v)+nextControls(v,host);
+  }
+  return h;
+}
+
+/* ---- Ludo ---- */
+function luGeo(C){
+  /* C arms (4 = classic cross, 6 = hexagon of arms). Each arm is 3 lanes wide and 6 squares long, with the end square in the middle.
+     Ring square 13*k+j on arm k: j 0-5 = outward along the lane on the counter-clockwise side, 6 = the end square, 7-12 = back inward along the clockwise lane.
+     The middle lane is that colour's home column (entered from the end square). Yards sit in the corners between two arms. */
+  const f=n=>Math.round(n*10)/10, d0=1.5/Math.tan(Math.PI/C), s=Math.floor(2800/(d0+7.2))/10, d=d0*s, L=13*C;
+  const ang=k=>(-90+k*360/C)*Math.PI/180;
+  const at=(k,u,v)=>{ const a=ang(k), ux=Math.cos(a), uy=Math.sin(a); return [f(300+u*ux-v*uy),f(300+u*uy+v*ux)]; };
+  const sq=(k,r,v)=>{ const p=at(k,d+(r+.5)*s,v); return [p[0],p[1],-90+k*360/C+90]; };
+  const cell=i=>{ i=((i%L)+L)%L; const k=Math.floor(i/13), j=i%13; return j<=5?sq(k,j,-s):j===6?sq(k,6,0):sq(k,12-j,s); };
+  const col=(c,k)=>sq(c,5-k,0);
+  const yard=c=>{ const a=(-90+(c+.5)*360/C)*Math.PI/180, r=(d+(C===4?3:3.5)*s)/Math.cos(Math.PI/C); return [f(300+r*Math.cos(a)),f(300+r*Math.sin(a)),C===4?0:-90+(c+.5)*360/C+90]; };
+  const home=(c,t)=>{ const p=sq(c,0,0), a=ang(c); const du=(t<2?-1:1)*.27*s, dv=(t%2?1:-1)*.27*s;
+    return [f(p[0]+du*Math.cos(a)-dv*Math.sin(a)),f(p[1]+du*Math.sin(a)+dv*Math.cos(a)),0,.55]; };
+  return {C,L,s,d,cr:s*.4,ang,at,cell,col,yard,home};
+}
+function luTokXY(G,g,s,p,t){
+  const L=G.L;
+  if(p===-1){ const y=G.yard(s.c); const o=G.s*(G.C===4?.95:.8); return [f1(y[0]+(t%2?1:-1)*o),f1(y[1]+(t<2?-1:1)*o),0,1]; }
+  if(p<=L-2){ const c=G.cell(13*s.c+7+p); return [c[0],c[1],0,1]; }
+  if(p<=L+3){ const c=G.col(s.c,p-(L-1)); return [c[0],c[1],0,1]; }
+  return G.home(s.c,t);
+}
+const f1=n=>Math.round(n*10)/10;
+/* a movable coin catches fire: three flickering flames that burn gently, so it is clear which coins can be moved */
+const LU_FLAME="M0 0C-.75-.1-.95-.8-.3-1.2C-.3-.8.1-.8 0-1.7C.75-1.1.95-.3.5-.1C.3 0 .1.1 0 0Z";
+function luFire(r){
+  const fl=(dx,sc,dl,col)=>`<g transform="translate(${f1(dx*r)} ${f1(-r*.5)}) scale(${f1(sc*r*1.25)})"><path class="lu-fl" style="animation-delay:${dl}s" fill="${col}" d="${LU_FLAME}"/></g>`;
+  return `<g pointer-events="none">${fl(-.55,.75,-.15,"#ff7a18")}${fl(.55,.7,-.3,"#ff7a18")}${fl(0,1.05,0,"#ff9d2e")}${fl(0,.62,-.2,"#ffe27a")}</g>`;
+}
+function luBoardHTML(v,mine){
+  const g=v.g, C=g.C, G=luGeo(C), L=G.L, s=G.s, cr=G.cr, now=Date.now()+S.off;
+  const used=c=>g.seats.some(x=>x.c===c);
+  const rect=(c,w,h,fill,fo,stroke,extra)=>`<rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="${s*.14}" fill="${fill}" fill-opacity="${fo}" stroke="${stroke}" ${extra||""} transform="translate(${c[0]} ${c[1]}) rotate(${c[2]})"/>`;
+  let b="";
+  // yards: a coloured corner block with a white pad and four token spots
+  for(let c=0;c<C;c++){
+    const y=G.yard(c), u=used(c), side=(C===4?5:3.9)*s;
+    b+=rect(y,side,side,LU_COL[c],u?.95:.25,"#0c1030",`stroke-width="2" rx="${s*.5}"`);
+    b+=rect(y,side*.7,side*.7,"#f4f6fb",u?.95:.3,"none",`rx="${s*.35}"`);
+    for(let t=0;t<4;t++) b+=`<circle cx="${f1(y[0]+(t%2?1:-1)*s*(C===4?.95:.8))}" cy="${f1(y[1]+(t<2?-1:1)*s*(C===4?.95:.8))}" r="${cr*1.05}" fill="${LU_COL[c]}" fill-opacity="${u?.35:.12}" stroke="${LU_COL[c]}" stroke-opacity=".8"/>`;
+  }
+  // hub: one coloured triangle per arm
+  for(let c=0;c<C;c++){
+    const a=G.ang(c), p=(u,v)=>{ const q=G.at(c,u,v); return q[0]+" "+q[1]; };
+    b+=`<polygon points="300 300 ${p(G.d,-1.5*s)} ${p(G.d,1.5*s)}" fill="${LU_COL[c]}" fill-opacity="${used(c)?.95:.25}" stroke="#0c1030" stroke-width="2"/>`;
+  }
+  // ring squares: white, start squares coloured, ★ squares marked
+  for(let i=0;i<L;i++){
+    const c=G.cell(i), k=Math.floor(i/13), st=i%13===7, star=i%13===2;
+    b+=rect(c,s*.94,s*.94,st?LU_COL[k]:"#f4f6fb",st?(used(k)?1:.35):.95,"#0c103088");
+    if(star||st) b+=`<text x="${c[0]}" y="${c[1]}" font-size="${s*.7}" text-anchor="middle" dominant-baseline="central" fill="${st?"#fff":"#6b7399"}" pointer-events="none">★</text>`;
+  }
+  // home columns and the home square
+  for(let c=0;c<C;c++){
+    for(let k=0;k<5;k++) b+=rect(G.col(c,k),s*.94,s*.94,LU_COL[c],used(c)?.9:.25,"#0c103088");
+    b+=rect(G.col(c,5),s*.94,s*.94,LU_COL[c],used(c)?.55:.15,"#0c103088");
+  }
+  // a capture: burst on the square
+  if(g.hit&&g.hit.cell>=0&&now-g.hit.at<1300){
+    const p=G.cell(g.hit.cell), el=Math.max(0,now-g.hit.at);
+    b+=`<g class="lu-burst" style="animation-delay:${-el}ms;transform-origin:${p[0]}px ${p[1]}px"><circle cx="${p[0]}" cy="${p[1]}" r="${s*.9}" fill="none" stroke="#fff" stroke-width="3"/><text x="${p[0]}" y="${p[1]}" font-size="${s*1.2}" text-anchor="middle" dominant-baseline="central">💥</text></g>`;
+  }
+  // tokens that left with their player fade away
+  (g.ghosts||[]).forEach(gh=>{
+    const el=Math.min(5,(now-gh.at)/1000), sd={c:gh.c};
+    gh.tok.forEach((p,t)=>{ const q=luTokXY(G,g,sd,p,t); b+=`<circle class="lu-fade" style="animation-delay:-${el.toFixed(2)}s;transform-origin:${q[0]}px ${q[1]}px" cx="${q[0]}" cy="${q[1]}" r="${cr*q[3]}" fill="${LU_COL[gh.c]}" stroke="#fff" stroke-width="1.5"/>`; });
+  });
+  // tokens (a square holding several gets a small offset so they stay visible)
+  const stack={};
+  g.seats.forEach((sd,si)=>sd.tok.forEach((p,t)=>{
+    const q=luTokXY(G,g,sd,p,t), key=p>=0&&p<=L+3?q[0]+","+q[1]:null;
+    let off=0; if(key){ off=(stack[key]=(stack[key]||0)+1)-1; }
+    const x=q[0]+off*3.5, y=q[1]-off*3.5, r=cr*q[3], can=mine&&g.turn===si&&g.movable.includes(t), mv=g.last&&g.last.c===sd.c&&g.last.t===t&&now-g.last.at<600;
+    let anim="";
+    if(mv){ const a=luTokXY(G,g,sd,g.last.from,t), el=Math.max(0,now-g.last.at)/1000; anim=`<animateTransform attributeName="transform" type="translate" from="${a[0]-q[0]} ${a[1]-q[1]}" to="0 0" dur=".5s" begin="-${el.toFixed(2)}s" fill="freeze"/>`; }
+    b+=`<g ${can?`class="lu-can" data-a="ludomove" data-t="${t}"`:""} transform="translate(${x} ${y})"><g>${anim}
+      <circle r="${r*1.45}" fill="transparent"/>${can?`<circle class="lu-glow" r="${r*1.9}" fill="url(#luGlow)"/>`:""}<circle class="lu-tk" r="${r}" fill="${LU_COL[sd.c]}" stroke="${can?"#ffb347":"#fff"}" stroke-width="2"/><circle r="${r*.42}" fill="#fff" fill-opacity=".6"/>${can?luFire(r):""}</g></g>`;
+  }));
+  return `<div class="lu-wrap"><svg class="lu-svg" viewBox="0 0 600 600" role="img" aria-label="Ludo board"><defs><radialGradient id="luGlow"><stop offset="35%" stop-color="#ff8a1f" stop-opacity=".55"/><stop offset="100%" stop-color="#ff8a1f" stop-opacity="0"/></radialGradient></defs>${b}</svg></div>`;
+}
+function luGameHTML(v){
+  const g=v.g, st=v.settings, me=v.me, host=me===v.hostPid, cur=g.seats[g.turn], play=g.phase!=="reveal";
+  const mine=play&&cur&&!cur.bot&&cur.pid===me, nm=s=>s.bot?"Computer":esc(pName(v,s.pid));
+  const dot=c=>`<i class="lu-dot" style="background:${LU_COL[c]}"></i>`;
+  let h=`<div class="scoreboard"><span class="chip">Round ${v.round}/${st.rounds}</span>${timerHTML(play&&g.phase!=="wait"?g.deadline:0)}</div>`;
+  h+=`<div class="scoreboard">${g.seats.map((s,i)=>`<span class="chip ${play&&i===g.turn&&!s.out?"active":""} ${s.out?"gone":""}" style="border-color:${LU_COL[s.c]}">${dot(s.c)} ${s.bot?"🤖":esc(pObj(v,s.pid).av)} ${nm(s)}${s.pid===me?" (you)":""} · ${s.out?"out":`<b>${s.done}</b>/4 home`}${!s.bot&&s.pid&&!s.out?kickBtn(v,pObj(v,s.pid)):""}</span>`).join("")}</div>`;
+  let side="";                                        // dice, whose turn it is and the roll button: shown to the right of the board
+  if(g.note&&play) side+=`<div class="msg warn">${esc(g.note)}</div>`;
+  if(play){
+    const el=Date.now()+S.off-g.rollAt, spin=g.rid&&el<800?`animation:dbTumble .8s ease-out ${-Math.max(0,el)}ms both;`:"";
+    if(g.die) side+=`<div class="db-dice">${dbDie(g.die,spin)}</div>`;
+    if(g.phase==="roll") side+=mine
+      ?`<div class="msg ok">${dot(cur.c)} <b>Your turn!</b> ${cur.tok.every(p=>p===-1)?"You need a 6 to bring a token out.":"Roll the dice."}</div><button class="btn green block db-roll" data-a="ludoroll">🎲 Roll the dice</button>`
+      :`<div class="msg info">⏳ ${dot(cur.c)} <b>${nm(cur)}</b> (${LU_NAME[cur.c]}) is about to roll…</div>`;
+    else if(g.phase==="move") side+=mine
+      ?`<div class="msg ok">${dot(cur.c)} You rolled <b>${g.die}</b> – tap a coin that is on fire 🔥 to move it.</div>`
+      :`<div class="msg info">${dot(cur.c)} <b>${nm(cur)}</b> rolled ${g.die} and is choosing a token…</div>`;
+  }
+  h+=`<div class="lu-play">${luBoardHTML(v,mine&&g.phase==="move")}<div class="lu-side">${side}</div></div>`;
+  if(!play){
+    const r=g.res, med=["🥇","🥈","🥉"];
+    h+=`<h3 style="margin-top:14px">Finishing order</h3>`+r.order.map((c,k)=>{ const s=g.seats.find(x=>x.c===c); return `<div class="xm-status"><span>${med[k]||(k+1)+"."} ${dot(c)} <b>${nm(s)}</b> <span class="mut">(${LU_NAME[c]})</span></span><span class="pink">${s.pid&&r.pts[s.pid]?"+"+r.pts[s.pid]:""}</span></div>`; }).join("");
+    h+=boardHTML(v)+nextControls(v,host);
+  }
+  return h;
+}
+
+/* ---- Rock Paper Scissors ---- */
+const RPS_ICO=["✊","✋","✌️"], RPS_NAME=["Rock","Paper","Scissors"];
+function rpsGameHTML(v){
+  const g=v.g, st=v.settings, me=v.me, host=me===v.hostPid, play=g.phase!=="reveal", pick=g.phase==="pick";
+  const mineE=g.ent.find(e=>e.pid===me), alive=g.ent.filter(e=>!e.out);
+  let h=`<div class="scoreboard"><span class="chip">Round ${v.round}/${st.rounds}</span><span class="chip">Throw ${g.throws+(pick?1:0)}</span>${g.target?`<span class="chip">First to ${g.target}</span>`:`<span class="chip">${alive.length} left</span>`}${timerHTML(pick?g.deadline:0)}</div>`;
+  h+=`<div class="rps-row">${g.ent.map(e=>{
+    const win=g.last&&g.phase!=="pick"&&g.last.winners.includes(e.id), lose=g.last&&g.phase!=="pick"&&g.last.losers.includes(e.id), sh=g.phase!=="pick"&&g.shown?g.shown[e.id]:undefined;
+    const ready=pick&&g.picked.includes(e.id);
+    // after the reveal an astronaut peeks out from behind the card of each throw winner and waves hi (everyone shrugs on a draw)
+    const age=g.last&&g.phase!=="pick"?(Date.now()+S.off-g.last.at)/1000:99, show=age<2.8&&!e.out&&(win||(g.last&&g.last.draw&&sh!==undefined));
+    const astro=show?`<div class="rps-astro ${g.last.draw?"shrug":"wave"}" style="animation-delay:-${Math.max(0,age).toFixed(2)}s" aria-hidden="true">${astroSVG(EJ_COLORS[Math.max(0,EMOJIS.indexOf(e.av))%EJ_COLORS.length],e.av)}</div>`:"";
+    return `<div class="rps-slot">${astro}<div class="rps-p ${e.out?"out":""} ${win?"win":""} ${lose?"lose":""} ${e.id===(mineE&&mineE.id)?"me":""}"><div class="rps-av">${esc(e.av)}</div><div class="rps-nm">${esc(e.name)}${e.id===(mineE&&mineE.id)?" (you)":""}</div>
+      <div class="rps-hand ${sh!==undefined?"shown":""} ${ready?"ready":""}">${sh!==undefined?RPS_ICO[sh]:e.out?"💨":ready?"✔":"❔"}</div>
+      <div class="rps-sc">${g.target?`<b>${e.pts}</b> win${e.pts===1?"":"s"}`:e.out?"out":"in"}${!e.bot&&e.pid&&e.pid!==me&&!e.out?kickBtn(v,pObj(v,e.pid)):""}</div></div></div>`; }).join("")}</div>`;
+  if(pick){
+    if(mineE&&!mineE.out){
+      h+=g.mine===null
+        ?`<div class="msg ok">Choose your sign – nobody sees it until everyone has thrown.</div><div class="rps-btns">${RPS_ICO.map((ic,i)=>`<button class="rps-b" data-a="rpsthrow" data-v="${i}" aria-label="${RPS_NAME[i]}"><span>${ic}</span><b>${RPS_NAME[i]}</b></button>`).join("")}</div>`
+        :`<div class="msg info">You threw ${RPS_ICO[g.mine]} – waiting for ${g.ent.filter(e=>!e.out&&!g.picked.includes(e.id)).map(e=>esc(e.name)).join(", ")||"everyone"}…</div>`;
+    } else h+=`<div class="msg info">👀 You're out – watching the others throw.</div>`;
+  } else if(play&&g.last){
+    const l=g.last;
+    h+=l.draw?`<div class="msg warn rps-res">🤝 Draw – ${new Set(Object.values(l.shown)).size===1?"everyone threw the same sign":"all three signs showed up"}. Throw again!</div>`
+      :`<div class="msg ok rps-res">${l.winners.map(i=>esc(g.ent.find(e=>e.id===i).name)).join(", ")||"The winners"} won the throw ${RPS_ICO[l.shown[l.winners[0]]]||""}${l.knock?` – ${l.losers.length} knocked out!`:""}</div>`;
+  }
+  if(!play){
+    const w=g.ent.find(e=>e.id===g.res.winner);
+    h+=w?`<div class="msg ok" style="font-size:1.05rem">🏆 ${esc(w.av)} <b>${esc(w.name)}</b> wins this round! 🎉</div>`:`<div class="msg info">Nobody won this round.</div>`;
     h+=boardHTML(v)+nextControls(v,host);
   }
   return h;
@@ -2987,6 +3607,7 @@ const chViewSeat=v=>{ const g=v.g; if(S.ui.chView!=null&&S.ui.chView<g.seats.len
 const chMyTurn=v=>{ const g=v.g; if(g.phase!=="play") return false; const s=g.seats[g.turn]; return !s.bot&&s.pid===v.me; };
 function chSeatName(v,i){
   const g=v.g,B=chBoard(g.id),s=g.seats[i],col=chP(v,i).name;
+  if(s.out) return `${pAv(v,s.pid)} ${esc(pName(v,s.pid))} (out)`;
   if(s.bot) return `🤖 Computer (${["","Easy","Medium","Hard"][s.lvl]||"Medium"})`;
   if(g.local) return col;
   return `${pAv(v,s.pid)} ${esc(pName(v,s.pid))}`;
@@ -3324,6 +3945,11 @@ function onAppClick(e){
       showModal({title:"Exit the game?",text:"Everyone stays in the room. You'll go back to the lobby where you can change the settings and start again.",ok:"Exit game",danger:false,act:"exitgame"});
       break;
     case "kick": { const v=S.room, p=v&&v.players.find(x=>x.pid===t.dataset.pid); if(p) showModal({title:"Kick "+p.name+"?",text:"They will be removed from the room"+(v.phase==="play"?" and the current game":"")+". They can join again with the room code.",ok:"Kick",danger:true,act:"kick",pid:p.pid}); break; }
+    case "dbroll": sendAct({a:"dbroll"}); break;
+    case "ludoroll": sendAct({a:"ludoroll"}); break;
+    case "ludomove": sendAct({a:"ludomove",t:+t.dataset.t}); break;
+    case "rpsthrow": sendAct({a:"rpsthrow",v:+t.dataset.v}); break;
+    case "dbline": sendAct({a:"dbline",t:t.dataset.t,i:+t.dataset.i}); break;
     case "chcell": chClick(+t.dataset.c); break;
     case "chpromo": chPromote(+t.dataset.p); break;
     case "chrw": chRwGo(t.dataset.d); break;
@@ -3392,15 +4018,15 @@ function ejCheck(v){
   const ev=v&&v.ev; if(!ev||!ev.items||!ev.items.length) return;
   const key=v.code+"#"+ev.id; if(EJ.seen.has(key)) return; EJ.seen.add(key);
   if(v.now-ev.at>12000) return;                       // old event (e.g. we just reconnected) – don't replay it
-  const wait=Math.max(0,(+ev.items[0].wait||0)-(v.now-ev.at)), go=()=>{ EJ.q.push({items:ev.items,me:v.me}); if(!EJ.active) ejNext(); };
+  const wait=Math.max(0,(+ev.items[0].wait||0)-(v.now-ev.at)), go=()=>{ EJ.q.push({items:ev.items,me:v.me,peek:ev.items.every(i=>i.peek)}); if(!EJ.active) ejNext(); };
   if(wait>0) setTimeout(go,wait); else go();
 }
 function ejDefer(fn){ if(EJ.active||EJ.q.length) EJ.after.push(fn); else fn(); }
 function ejNext(){
   const b=EJ.q.shift(); if(!b){ EJ.active=false; return; }
   EJ.active=true; EJ.cur=b;
-  const root=$("eject"); root.classList.add("on");
-  const app=$("app"); if(app) app.inert=true;
+  const root=$("eject"); root.classList.add("on"); root.classList.toggle("peek",!!b.peek);   // peek: a see-through scene - the board stays visible and playable
+  const app=$("app"); if(app&&!b.peek) app.inert=true;
   try{ if(document.activeElement&&document.activeElement.blur) document.activeElement.blur(); }catch(e){}
   ejPlay(b.items,0,b.me);
 }
@@ -3416,7 +4042,7 @@ function ejPlay(items,i,me){
   // starfield (random per scene)
   const star=(n,mx)=>{ let a=[]; for(let k=0;k<n;k++) a.push(`${(Math.random()*100).toFixed(1)}vw ${(Math.random()*100).toFixed(1)}vh 0 ${(Math.random()*mx).toFixed(1)}px #fff`); return a.join(","); };
   let vent=""; for(let k=0;k<20;k++){ const a=(Math.random()*1.4-.7), d=14+Math.random()*34; vent+=`<i style="--dx:${(Math.cos(a)*d).toFixed(1)}vmin;--dy:${(Math.sin(a)*d).toFixed(1)}vmin;animation-delay:${(1.7+Math.random()*.25).toFixed(2)}s"></i>`; }
-  root.innerHTML=`<div class="ej tone-${esc(it.tone||"bad")} ${it.none?"none":""} ${EJ.reduce?"calm":""}" role="alertdialog" aria-modal="true" aria-label="${esc((eb+". "+head+" "+sub+" "+epi).trim())}" style="--T:${T}ms">
+  root.innerHTML=`<div class="ej tone-${esc(it.tone||"bad")} ${it.none?"none":""} ${it.peek?"peek":""} ${EJ.reduce?"calm":""}" role="alertdialog" aria-modal="true" aria-label="${esc((eb+". "+head+" "+sub+" "+epi).trim())}" style="--T:${T}ms">
     <div class="ej-world">
       <div class="ej-stars" style="box-shadow:${star(70,0)}"></div><div class="ej-stars s2" style="box-shadow:${star(34,1.4)}"></div>
       <div class="ej-planet"></div><div class="ej-moon"></div>
@@ -3452,7 +4078,7 @@ function ejEnd(){
   ejClear();
   const root=$("eject"), e=root.querySelector(".ej");
   const fin=()=>{
-    root.classList.remove("on"); root.innerHTML="";
+    root.classList.remove("on","peek"); root.innerHTML="";
     const app=$("app"); if(app) app.inert=false;
     EJ.cur=null;
     const cbs=EJ.after.splice(0); cbs.forEach(f=>{ try{ f(); }catch(x){ console.error(x); } });
@@ -3504,7 +4130,7 @@ function ejAudio(it){
   }catch(e){ return null; }
 }
 document.addEventListener("keydown",e=>{
-  if(!EJ.active) return;
+  if(!EJ.active||(EJ.cur&&EJ.cur.peek)) return;
   if(e.key==="Escape"||e.key==="Enter"||e.key===" "){ e.preventDefault(); e.stopImmediatePropagation(); ejSkip(); }
 },true);
 
@@ -3758,7 +4384,9 @@ function registerSW(){
 const OFF_YES=[
   {ico:"♟️",name:"Chess vs the computer",d:"Easy, Medium or Hard, choose your colour, with clocks and move hints.",g:"chess"},
   {ico:"♟️",name:"Chess – pass & play",d:"Two sides, one device. Hand the screen to a friend sitting next to you.",g:"chess",solo:"local"},
-  {ico:"🎯",name:"Number Game – solo",d:"Crack the secret number on your own. Rounds, difficulty and timers all work.",g:"number"}
+  {ico:"🎯",name:"Number Game – solo",d:"Crack the secret number on your own. Rounds, difficulty and timers all work.",g:"number"},
+  {ico:"🏁",name:"Ludo vs the computer",d:"Choose the 4- or 6-colour board, play against computer colours.",g:"ludo"},
+  {ico:"✊",name:"Rock Paper Scissors vs the computer",d:"First to 2, best of 3 – or change the target in the settings.",g:"rps"}
 ];
 const OFF_NO=[
   {ico:"🕵️",name:"Who Is the Spy?",d:"Needs 3+ people, each on their own device to see their secret word."},
