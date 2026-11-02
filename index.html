@@ -927,7 +927,7 @@ function saveMe(){
 }
 
 /* ================= NETWORKING (PeerJS: the host's browser is the server) ================= */
-const NET={peer:null,role:null,code:"",conns:{},hostConn:null,R:null,timer:null,leaving:false,settled:false,local:false,abortJoin:null};
+const NET={peer:null,role:null,code:"",conns:{},hostConn:null,R:null,timer:null,leaving:false,settled:false,local:false,abortJoin:null,spec:false,watchers:{}};
 const OFFLINE_OK={number:1,chess:1,ludo:1,rps:1};
 function genCode(){ const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<5;i++) s+=a[Math.floor(Math.random()*a.length)]; return s; }
 function needPeer(retry){
@@ -946,10 +946,10 @@ function clearSession(){ try{ sessionStorage.removeItem("ngg_room"); }catch(e){}
 function getSession(){ try{ return JSON.parse(sessionStorage.getItem("ngg_room")); }catch(e){ return null; } }
 
 function setRoom(v,off){
-  try{ trackRoom(v); }catch(e){ console.error(e); }
+  if(!NET.spec) try{ trackRoom(v); }catch(e){ console.error(e); }       // a watching admin is not a player: no stats
   S.room=v; S.off=off||0; S.screen="room";
   ejCheck(v);                                   // ejection cutscene (if this state carries a new one)
-  roleCheck(v);                                 // secret-role screen at the start of each round
+  if(!NET.spec) roleCheck(v);                   // secret-role screen at the start of each round (never for a watcher)
   // reset typed drafts when the phase/round changes
   const g=v.g, key=v.code+"|"+v.round+"|"+v.phase+"|"+(g?g.phase:"");
   if(S.stKey!==key){ S.stKey=key; delete S.ui.voteSel; delete S.ui.rrSel; delete S.ui.spyClue; delete S.ui.guess; }
@@ -1008,25 +1008,27 @@ function createRoom(game){
   tryMake(0);
 }
 
-function joinRoom(code){
-  if(!needPeer(()=>joinRoom(code))) return;
+function joinRoom(code,spec){
+  if(!needPeer(()=>joinRoom(code,spec))) return;
   code=String(code||"").trim().toUpperCase();
-  if(!saveMe()) { clearSession(); return; }
+  if(!spec&&!saveMe()) { clearSession(); return; }
   if(code.length<4){ toast("Enter the room code.","err"); return; }
-  if(S.screen!=="entry"){ S.screen="entry"; }
-  S.busy="Joining room "+code+"…"; render();
+  if(spec&&!AUTH.isAdmin) return;
+  if(!spec&&S.screen!=="entry"){ S.screen="entry"; }
+  S.busy=(spec?"Opening room ":"Joining room ")+code+"…"; render();
   const peer=new Peer(iceConfig());
   NET.settled=false; NET.leaving=false;
   let stage="server";            // server -> room -> link
+  const back=()=>{ if(spec&&S.screen!=="room") S.screen="admin"; };
   const fail=t=>{
     if(NET.settled) return;
     try{ peer.destroy(); }catch(e){}
-    clearTimeout(to); clearSession(); S.busy=null; NET.abortJoin=null; toast(t,"err");
+    clearTimeout(to); clearSession(); S.busy=null; NET.abortJoin=null; back(); toast(t,"err");
   };
   const to=setTimeout(()=>fail(
     stage==="server"?"Could not reach the matchmaking server (0.peerjs.com). Check your internet, or try another network."
     :"Found the room but could not open a direct connection. This usually means a network/firewall block (e.g. host on Wi-Fi, you on mobile data). Put both devices on the same Wi-Fi, or add a TURN relay under 'Connection help' below."),20000);
-  NET.abortJoin=()=>{ if(NET.settled) return; try{ peer.destroy(); }catch(e){} clearTimeout(to); clearSession(); S.busy=null; NET.abortJoin=null; render(); };
+  NET.abortJoin=()=>{ if(NET.settled) return; try{ peer.destroy(); }catch(e){} clearTimeout(to); clearSession(); S.busy=null; NET.abortJoin=null; back(); render(); };
   renderSys();
   peer.on("error",e=>{
     if(!NET.settled) fail(e.type==="peer-unavailable"?"Room not found. Check the code (the host must keep the room open and the tab in front).":"Connection error ("+e.type+").");
@@ -1035,8 +1037,8 @@ function joinRoom(code){
     stage="link";
     const conn=peer.connect("wfg-"+code,{reliable:true});
     conn.on("open",()=>{
-      Object.assign(NET,{peer,role:"guest",code,hostConn:conn,conns:{},R:null});
-      conn.send({t:"join",pid:S.me.pid,name:S.me.name,av:S.me.av});
+      Object.assign(NET,{peer,role:"guest",code,hostConn:conn,conns:{},R:null,spec:!!spec});
+      conn.send(spec?{t:"join",spectate:true}:{t:"join",pid:S.me.pid,name:S.me.name,av:S.me.av});
     });
     conn.on("data",m=>guestOnMsg(m,fail));
     conn.on("close",()=>{ if(NET.hostConn===conn&&!NET.leaving) cleanup({type:"warn",text:"Lost connection to the host. You can rejoin with the room code if the room is still open."}); });
@@ -1044,7 +1046,7 @@ function joinRoom(code){
 }
 function guestOnMsg(m,fail){
   if(!m) return;
-  if(m.t==="joined"){ NET.settled=true; NET.abortJoin=null; S.busy=null; saveSession(); }
+  if(m.t==="joined"){ NET.settled=true; NET.abortJoin=null; S.busy=null; if(!NET.spec) saveSession(); }
   else if(m.t==="state"){ NET.settled=true; NET.abortJoin=null; S.busy=null; setRoom(m.s,m.s.now-Date.now()); }
   else if(m.t==="toast"){ toast(m.text,"err"); }
   else if(m.t==="draw"){ skApply(m.d); }
@@ -1061,6 +1063,13 @@ function hostOnConn(conn){
 }
 function hostOnMsg(conn,m){
   const R=NET.R; if(!R||!m) return;
+  if(m.t==="join"&&m.spectate){                    // admin watching: sees the room but is no player and can never send an action
+    conn._watch=true; NET.watchers[conn.peer]=conn;
+    try{ conn.send({t:"joined"}); }catch(e){}
+    pushState();
+    if(R.g&&R.g.kind==="sk"&&R.phase==="play"){ try{ conn.send({t:"draw",d:{k:"sync",strokes:R.g.strokes}}); }catch(e){} }
+    return;
+  }
   if(m.t==="join"){
     const pid=String(m.pid||""), name=String(m.name||"").trim().slice(0,16), av=EMOJIS.includes(m.av)?m.av:EMOJIS[0];
     const rej=why=>{ try{ conn.send({t:"reject",why}); }catch(e){} setTimeout(()=>{ try{ conn.close(); }catch(e){} },300); };
@@ -1088,6 +1097,7 @@ function hostOnMsg(conn,m){
   else if(m.t==="leave") removePlayer(R,pid);
 }
 function hostOnClose(conn){
+  if(conn._watch){ if(NET.watchers[conn.peer]===conn) delete NET.watchers[conn.peer]; return; }
   const R=NET.R, pid=conn._pid; if(!R||!pid||NET.conns[pid]!==conn) return;
   if(R.phase==="lobby"){ removePlayer(R,pid); return; }
   const p=R.players.find(x=>x.pid===pid); if(p){ p.connected=false; p.offAt=Date.now(); pushState(); }
@@ -1159,7 +1169,9 @@ function pushState(){
     const c=NET.conns[p.pid];
     if(c&&c.open){ try{ c.send({t:"state",s:viewFor(R,p.pid)}); }catch(e){} }
   });
-  setRoom(viewFor(R,R.hostPid),0);
+  const hv=viewFor(R,R.hostPid);
+  Object.values(NET.watchers).forEach(c=>{ if(c.open){ try{ c.send({t:"state",s:hv}); }catch(e){} } });
+  setRoom(hv,0);
 }
 function tell(R,pid,text){
   if(pid===R.hostPid) toast(text,"err");
@@ -1168,6 +1180,7 @@ function tell(R,pid,text){
 
 /* ---- actions ---- */
 function sendAct(m){
+  if(NET.spec) return;                                   // admins only watch
   if(NET.role==="host") dispatch(S.me.pid,m);
   else if(NET.hostConn&&NET.hostConn.open) NET.hostConn.send({t:"act",m});
   else toast("Not connected to the room.","err");
@@ -1946,6 +1959,7 @@ function hostDraw(pid,op){
     if(p.pid===pid||p.pid===R.hostPid) return;
     const c=NET.conns[p.pid]; if(c&&c.open){ try{ c.send({t:"draw",d:op}); }catch(e){} }
   });
+  Object.values(NET.watchers).forEach(c=>{ if(c.open){ try{ c.send({t:"draw",d:op}); }catch(e){} } });
   if(pid!==R.hostPid) skApply(op);                        // the host's own canvas
 }
 
@@ -2656,8 +2670,9 @@ function onOverlayKey(e){
 function leaveRoom(force){
   if(NET.role==="host"){
     if(!force) return showModal(NET.local?{title:"Leave this game?",text:"Your offline game on this device will end.",ok:"Leave",danger:true,act:"closeroom"}:{title:"Close the room?",text:"This closes the room for everyone and disconnects all players.",ok:"Close room",danger:true,act:"closeroom"});
-    Object.values(NET.conns).forEach(c=>{ try{ c.send({t:"closed"}); }catch(e){} });
-  } else {
+    Object.values(NET.conns).concat(Object.values(NET.watchers)).forEach(c=>{ try{ c.send({t:"closed"}); }catch(e){} });
+  } else if(NET.spec){ NET.leaving=true; }          // a watcher just disconnects – nothing to tell the host
+  else {
     if(!force) return showModal({title:"Leave the room?",text:"You will be removed from the room. You can rejoin later with the room code while the room is still open.",ok:"Leave room",danger:true,act:"leaveroom"});
     NET.leaving=true; try{ NET.hostConn.send({t:"leave"}); }catch(e){}
   }
@@ -2665,12 +2680,15 @@ function leaveRoom(force){
 }
 function cleanup(notice){
   clearInterval(NET.timer);
-  try{ Object.values(NET.conns).forEach(c=>c.close()); }catch(e){}
+  const wasSpec=NET.spec;
+  try{ Object.values(NET.conns).concat(Object.values(NET.watchers)).forEach(c=>c.close()); }catch(e){}
   try{ NET.hostConn&&NET.hostConn.close(); }catch(e){}
   try{ NET.peer&&NET.peer.destroy(); }catch(e){}
-  Object.assign(NET,{peer:null,role:null,code:"",conns:{},hostConn:null,R:null,timer:null,leaving:false,settled:false,local:false,abortJoin:null});
+  Object.assign(NET,{peer:null,role:null,code:"",conns:{},hostConn:null,R:null,timer:null,leaving:false,settled:false,local:false,abortJoin:null,spec:false,watchers:{}});
   clearSession();
   S=freshState(); if(notice) S.notice=notice;
+  if(wasSpec&&AUTH.isAdmin) S.screen="admin";            // a watching admin goes back to the people list
+  try{ fbSetLive(null); }catch(e){}
   padClear(); render();
 }
 function copyLink(){
@@ -2936,14 +2954,25 @@ function nextControls(v,host){
 function roomHTML(){
   const v=S.room;
   if(!v) return `<div class="msg info">⏳ Connecting to room…</div>`;
-  const host=v.me===v.hostPid;
-  let h=`<div class="topbar"><h1 class="title">${GTITLE[v.game]}</h1><div style="display:flex;gap:8px;flex-wrap:wrap">
+  const host=v.me===v.hostPid, spec=NET.spec;
+  let h=spec?specBarHTML(v):`<div class="topbar"><h1 class="title">${GTITLE[v.game]}</h1><div style="display:flex;gap:8px;flex-wrap:wrap">
     ${NET.local?"":`<button class="btn secondary" data-a="copyLink">🔗 Invite link</button>`}
     ${host&&v.phase==="play"?`<button class="btn secondary" data-a="exitgame">⏹ Exit game (keep room)</button>`:""}
     <button class="btn secondary" data-a="leave">${host?(NET.local?"🏠 Leave game":"✖ Close room"):"🚪 Leave room"}</button></div></div>`;
+  if(spec) return h+`<div inert>`+roomBodyHTML(v,host)+`</div>`;          // inert: nothing in the game can be clicked, typed into or changed
+  return h+roomBodyHTML(v,host);
+}
+function specBarHTML(v){
+  const others=Object.values(AUTH.adm.users).filter(u=>fbOnline(u)&&u.liveRoom&&u.liveRoom.code&&u.liveRoom.code!==v.code&&u.role!=="admin");
+  return `<div class="topbar"><h1 class="title">👁 ${GTITLE[v.game]}</h1><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn secondary" data-a="admBack">🛡 Back to people</button></div></div>
+    <div class="msg info">👁 <b>Watching as admin</b> – view only. You can't change settings or affect the game.</div>
+    ${others.length?`<div class="scoreboard" style="margin:0 0 10px"><span class="mut">Watch someone else:</span>${others.map(u=>`<button class="btn secondary" data-a="admWatch" data-key="${esc(u.email)}">${esc(u.name||u.email)} · ${esc(gameLabel(u.liveRoom.game))}</button>`).join("")}</div>`:""}`;
+}
+function roomBodyHTML(v,host){
+  let h="";
   h+=`<div class="card2" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
     ${NET.local?`<div><div class="mut" style="font-size:.8rem">Offline game</div><div class="code" style="font-size:1.2rem;letter-spacing:.04em">📴 This device only</div></div>`:`<div><div class="mut" style="font-size:.8rem">Room code</div><div class="code">${esc(v.code)}</div></div>`}
-    <div class="scoreboard" style="margin:0">${v.players.map(p=>`<span class="chip ${p.connected?"":"off"} ${p.left?"gone":""}">${p.av} ${esc(p.name)}${p.pid===v.hostPid?" 👑":""}${p.pid===v.me?" (you)":""}${p.left?" · left":!p.connected?" · offline":""}${kickBtn(v,p)}</span>`).join("")}</div></div>`;
+    <div class="scoreboard" style="margin:0">${v.players.map(p=>`<span class="chip ${p.connected?"":"off"} ${p.left?"gone":""}">${p.av} ${esc(p.name)}${p.pid===v.hostPid?" 👑":""}${p.pid===v.me&&!NET.spec?" (you)":""}${p.left?" · left":!p.connected?" · offline":""}${kickBtn(v,p)}</span>`).join("")}</div></div>`;
   if(v.phase==="lobby") return h+lobbyHTML(v,host);
   if(v.phase==="end") return h+endHTML(v,host);
   return h+(v.game==="spy"?spyGameHTML(v):v.game==="number"?numGameHTML(v):v.game==="Scribblio"?"":v.game==="chess"?chessGameHTML(v):v.game==="dots"?dbGameHTML(v):v.game==="ludo"?luGameHTML(v):v.game==="rps"?rpsGameHTML(v):rrGameHTML(v));
@@ -3385,7 +3414,7 @@ let skColor="#000000", skSize=8, skTool="pen", skDraw=null;
 const SKC={el:null,ctx:null,strokes:[],tid:"",sid:0};
 const SKW=800, SKH=600;
 function skPlayView(){ const v=S.room; return !!(S.screen==="room"&&v&&v.game==="Scribblio"&&v.phase==="play"&&v.g&&v.g.kind==="sk"); }
-function skCanDraw(){ const v=S&&S.room; return !!(v&&v.game==="Scribblio"&&v.phase==="play"&&v.g&&v.g.kind==="sk"&&v.g.phase==="draw"&&v.g.drawer===v.me); }
+function skCanDraw(){ const v=S&&S.room; return !!(!NET.spec&&v&&v.game==="Scribblio"&&v.phase==="play"&&v.g&&v.g.kind==="sk"&&v.g.phase==="draw"&&v.g.drawer===v.me); }
 function skStrokeDraw(s,from){
   const c=SKC.ctx; c.lineCap="round"; c.lineJoin="round"; c.strokeStyle=s.c; c.lineWidth=s.w;
   for(let i=Math.max(from,0);i<s.p.length;i++){
@@ -3450,14 +3479,14 @@ const skSecs=dl=>Math.max(0,Math.ceil((dl-(Date.now()+S.off))/1000));
 function skRender(app){
   const v=S.room;
   if(!$("skShell")){
-    const host=v.me===v.hostPid;
+    const host=v.me===v.hostPid, spec=NET.spec;
     app.innerHTML=`<div class="layout wide"><main id="skShell">
-      <div class="topbar"><h1 class="title">${GTITLE.Scribblio}</h1><div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${spec?`<div id="skSpec">${specBarHTML(v)}</div>`:`<div class="topbar"><h1 class="title">${GTITLE.Scribblio}</h1><div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn secondary" data-a="copyLink">🔗 Invite link</button>
         ${host?`<button class="btn secondary" data-a="exitgame">⏹ Exit game (keep room)</button>`:""}
-        <button class="btn secondary" data-a="leave">${host?"✖ Close room":"🚪 Leave room"}</button></div></div>
+        <button class="btn secondary" data-a="leave">${host?"✖ Close room":"🚪 Leave room"}</button></div></div>`}
       <div class="sk-head" id="skHead"></div>
-      <div class="sk-board">
+      <div class="sk-board" ${spec?"inert":""}>
         <div class="sk-players" style="grid-area:players"><div class="in" id="skPlayers"></div></div>
         <div style="grid-area:stage;min-width:0"><div class="sk-stage" id="skStage"><div class="sk-overlay" id="skOverlay"></div></div><div id="skTools"></div></div>
         <div class="sk-chat" style="grid-area:chat"><div class="in"><div class="sk-log" id="skLog"></div>
@@ -3982,6 +4011,9 @@ function onAppClick(e){
     case "admRole": { const k=t.dataset.key, r=t.dataset.role;
       showModal({title:r==="admin"?"Make this person an admin?":"Remove admin role?",text:r==="admin"?k+" will be able to invite, remove and see everyone's activity.":k+" will become a normal player.",ok:r==="admin"?"Make admin":"Remove admin role",danger:r!=="admin",act:"fbrole",key:k,role:r}); break; }
     case "admMail": admMail(t.dataset.key); break;
+    case "admWatch": { const u=Object.values(AUTH.adm.users).find(x=>x.email===t.dataset.key), c=u&&u.liveRoom&&u.liveRoom.code; if(!c) return toast("They are not in a room right now.","err");
+      if(NET.role) cleanup(); joinRoom(c,true); break; }
+    case "admBack": cleanup(); break;
     case "admCopy": try{ navigator.clipboard.writeText("You're invited to Game Hub: "+admLink()+" – choose Register and use "+t.dataset.key); toast("Invite message copied – paste it to them.","ok"); }catch(x){ toast(admLink(),"info"); } break;
     case "go": S.notice=null; S.game=t.dataset.g; S.screen="entry"; render(); break;
     case "goJoin": S.notice=null; S.game=null; S.screen="entry"; render(); break;
@@ -4526,7 +4558,7 @@ async function fbInit(){
   FBA.onAuthStateChanged(u=>fbOnUser(u));
 }
 function fbStop(){
-  clearInterval(AUTH.hb); AUTH.hb=null;
+  clearInterval(AUTH.hb); AUTH.hb=null; LIVE_KEY=null;
   if(AUTH.unSelf){ try{ AUTH.unSelf(); }catch(e){} AUTH.unSelf=null; }
   AUTH.adm.subs.forEach(f=>{ try{ f(); }catch(e){} }); AUTH.adm.subs=[]; AUTH.adm.invites=[]; AUTH.adm.users={};
 }
@@ -4660,6 +4692,7 @@ async function doRecSave(){
   render();
 }
 function doAuthLogout(){
+  try{ fbSetLive(null); }catch(e){}
   try{ if(NET&&NET.role) leaveRoom(true); }catch(e){}
   trackEnd("left",null);
   const u=AUTH.user&&FBD?FBD.collection("users").doc(AUTH.user.uid).update({online:false}).catch(()=>{}):Promise.resolve();
@@ -4668,8 +4701,16 @@ function doAuthLogout(){
 
 /* ---- activity tracking: every signed-in player records their own games ---- */
 const TR={key:null,start:0,game:null,host:false,code:"",players:0};
+let LIVE_KEY=null;                                           // the room this person is in right now – what the admin's "Game view" column shows
+function fbSetLive(r){
+  const key=r?[r.code,r.game,r.phase,r.host].join("|"):null;
+  if(key===LIVE_KEY) return; LIVE_KEY=key;
+  if(!FBD||!AUTH.user||AUTH.state!=="in") return;
+  FBD.collection("users").doc(AUTH.user.uid).update({liveRoom:r?Object.assign({},r,{at:fbNow()}):firebase.firestore.FieldValue.delete()}).catch(()=>{});
+}
 function trackRoom(v){
   if(AUTH.state!=="in"||!FBD||!AUTH.user) return;
+  if(!NET.local) fbSetLive({code:v.code,game:v.game,phase:v.phase,host:v.me===v.hostPid});
   if(v.phase==="play"){
     const key=v.code+"|"+v.game+"|"+(v.hist||[]).length;
     if(TR.key!==key){
@@ -4698,7 +4739,7 @@ function trackSweep(){ if(TR.key&&!(S&&S.screen==="room"&&S.room&&S.room.phase==
 
 /* ---- admin: live invites + users ---- */
 function fbAdminSync(){
-  const need=AUTH.state==="in"&&AUTH.isAdmin&&S&&S.screen==="admin", A=AUTH.adm;
+  const need=AUTH.state==="in"&&AUTH.isAdmin&&S&&(S.screen==="admin"||NET.spec), A=AUTH.adm;
   if(need&&!A.subs.length){
     const bad=e=>{ A.err=fbErrText(e); render(); };
     A.subs=[
@@ -4816,6 +4857,7 @@ function adminHTML(){
   const games={}; all.forEach(u=>Object.keys(u.stats||{}).forEach(g=>{ games[g]=(games[g]||0)+(u.stats[g].played||0); }));
   const top=Object.keys(games).sort((a,b)=>games[b]-games[a])[0];
   let h=A.err?`<div class="msg err">${esc(A.err)} – have you published firestore.rules?</div>`:"";
+  if(S.busy) h+=`<div class="msg info">⏳ ${esc(S.busy)}</div>`;
   h+=`<div class="adm-cards">${card("Active accounts",all.filter(u=>u.role!=="admin").length)}${card("Invited, not registered",A.invites.filter(i=>i.status==="invited"&&!all.some(u=>u.email===i.id)).length)}${card("Online now",all.filter(fbOnline).length)}${card("Active last 7 days",all.filter(u=>now-fbMs(u.lastLoginAt)<6048e5).length)}${card("Games played",all.reduce((a,u)=>a+(u.gamesPlayed||0),0))}${card("Total play time",fbDur(all.reduce((a,u)=>a+(u.totalSeconds||0),0)))}${card("Most played",top?esc(gameLabel(top)):"–")}</div>`;
   h+=`<div class="card2"><h3>✉️ Invite someone</h3><p class="mut" style="margin:0 0 8px">Only invited e-mails can register. Add the address here, then send them the site link.</p>
     <div class="row"><div><label>E-mail</label><input type="email" id="admEmail" data-keep autocomplete="off" placeholder="friend@example.com" value="${esc(S.ui.admEmail||"")}"></div>
@@ -4824,16 +4866,18 @@ function adminHTML(){
   h+=`<div class="card2" style="margin-top:14px"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between"><h3 style="margin:0">👥 People (${rows.length})</h3>
     <input type="text" id="admQ" data-keep autocomplete="off" placeholder="Search name or e-mail" style="max-width:260px" value="${esc(S.ui.admQ||"")}"></div>`;
   if(!rows.length) h+=`<p class="mut">Nobody yet – invite someone above.</p>`;
-  else h+=`<div class="adm-tw"><table class="adm-t"><thead><tr><th>Person</th><th>Status</th><th>Last sign-in</th><th>Sign-ins</th><th>Games</th><th>Device</th><th></th></tr></thead><tbody>`+rows.map(r=>{
+  else h+=`<div class="adm-tw"><table class="adm-t"><thead><tr><th>Person</th><th>Status</th><th>Last sign-in</th><th>Sign-ins</th><th>Games</th><th>Device</th><th>Game view</th><th></th></tr></thead><tbody>`+rows.map(r=>{
     const u=r.u, open=A.open===r.email, st=r.status==="active"?(fbOnline(u)?`<span class="adm-pill on">● online</span>`:`<span class="adm-pill ok">active</span>`):r.status==="invited"?`<span class="adm-pill wait">invited</span>`:`<span class="adm-pill off">removed</span>`;
     const isAdm=!!(u&&u.role==="admin"), me=u&&AUTH.user&&u.id===AUTH.user.uid;
     const acts=isAdm?(me?`<span class="mut">you (admin)</span>`:`<button class="btn secondary" data-a="admRole" data-key="${esc(r.email)}" data-role="user">Remove admin</button>`):r.status==="active"?`<button class="btn secondary" data-a="admRole" data-key="${esc(r.email)}" data-role="admin">⭐ Make admin</button> <button class="btn danger" data-a="admRemove" data-key="${esc(r.email)}">🗑 Remove</button>`
       :r.status==="invited"?`<button class="btn secondary" data-a="admCopy" data-key="${esc(r.email)}">🔗 Link</button> <button class="btn secondary" data-a="admMail" data-key="${esc(r.email)}">✉</button> <button class="btn danger" data-a="admRemove" data-key="${esc(r.email)}">Revoke</button>`
       :`<button class="btn secondary" data-a="admReinvite" data-key="${esc(r.email)}">↩ Re-invite</button>`;
+    const lr=u&&fbOnline(u)&&u.liveRoom&&u.liveRoom.code?u.liveRoom:null;
+    const gv=lr?`<span class="adm-pill on">${esc(gameLabel(lr.game))}</span> <span class="mut">${esc(lr.code)} · ${lr.phase==="lobby"?"lobby":lr.phase==="end"?"finished":"playing"}</span> <button class="btn secondary" data-a="admWatch" data-key="${esc(r.email)}">👁 Watch</button>`:`<span class="mut">–</span>`;
     let row=`<tr class="${r.status}"><td><button class="adm-name" data-a="admToggle" data-key="${esc(r.email)}" ${u?"":"disabled"}>${u?(open?"▾ ":"▸ "):""}<b>${esc(r.name||(u?"–":""))}</b></button>${isAdm?` <span class="adm-pill on">admin</span>`:""}<div class="mut">${esc(r.email)}</div></td><td ${u?`title="Last seen ${fbAgo(fbMs(u.lastSeen))}"`:""}>${st}</td>
       <td ${u?`title="${fbDate(fbMs(u.lastLoginAt))}"`:""}>${u?fbAgo(fbMs(u.lastLoginAt)):"–"}</td><td>${u?u.loginCount||0:"–"}</td>
-      <td ${u&&u.lastGame?`title="Last played: ${esc(gameLabel(u.lastGame))}"`:""}>${u?(u.gamesPlayed||0)+" · "+fbDur(u.totalSeconds):"–"}</td><td class="mut adm-dev">${u?esc(u.device||"–"):"–"}</td><td class="adm-ac">${acts}</td></tr>`;
-    if(open&&u) row+=`<tr class="adm-det"><td colspan="7"><div class="mut" style="margin-bottom:6px">Registered ${fbDate(fbMs(u.createdAt))} · ${esc(u.email)}</div><h4>Games</h4>${statsTableHTML(u.stats)}<h4 style="margin-top:12px">Recent activity</h4>${actListHTML(A.act[u.id])}</td></tr>`;
+      <td ${u&&u.lastGame?`title="Last played: ${esc(gameLabel(u.lastGame))}"`:""}>${u?(u.gamesPlayed||0)+" · "+fbDur(u.totalSeconds):"–"}</td><td class="mut adm-dev">${u?esc(u.device||"–"):"–"}</td><td>${gv}</td><td class="adm-ac">${acts}</td></tr>`;
+    if(open&&u) row+=`<tr class="adm-det"><td colspan="8"><div class="mut" style="margin-bottom:6px">Registered ${fbDate(fbMs(u.createdAt))} · ${esc(u.email)}</div><h4>Games</h4>${statsTableHTML(u.stats)}<h4 style="margin-top:12px">Recent activity</h4>${actListHTML(A.act[u.id])}</td></tr>`;
     return row;
   }).join("")+`</tbody></table></div>`;
   return h+`</div>`;
