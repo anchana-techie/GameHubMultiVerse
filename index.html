@@ -4036,7 +4036,7 @@ function onAppInput(e){
   if(t.dataset&&t.dataset.keep!==undefined&&t.id){
     if(t.id==="guess"){ const c=t.value.replace(/\D/g,""); if(c!==t.value) t.value=c; }
     S.ui[t.id]=t.value;
-    if(t.id==="admQ") render();
+    if(t.id==="admQ"&&e.type==="input"){ clearTimeout(S._admQ); S._admQ=setTimeout(render,120); }   // not on "change": removing the focused box during a redraw fires one, which would redraw inside the redraw
   }
 }
 function onAppKey(e){
