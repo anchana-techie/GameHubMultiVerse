@@ -1,6 +1,6 @@
 # 🎮 Game Hub
 
-A single-file (`index.html`) browser game hub for playing with friends online. No server, build step or login needed – just open the file.
+A single-file (`index.html`) browser game hub for playing with friends online. No server or build step – just open the file. Optional **invite-only accounts with an admin dashboard** (Firebase) can be switched on – see [FIREBASE_SETUP.md](FIREBASE_SETUP.md). Architecture and documentation: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Games
 
@@ -121,3 +121,5 @@ Preview any page: `#/loading`, `#/error`, `#/no-internet`, `#/404`, `#/offline-m
 - `offline.html` – fallback shown by the service worker if the hub can't open and isn't saved yet.
 - `sw.js` – service worker for offline use (keep next to `index.html`).
 - `README.md` – this file.
+- `firebase-config.js`, `firestore.rules`, `FIREBASE_SETUP.md` – optional accounts, invites and admin view (Firebase).
+- `docs/ARCHITECTURE.md`, `docs/architecture.svg` – architecture diagram and documentation.

@@ -1,0 +1,416 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 18 1480 862" width="1480" height="862" font-family="Arial, Helvetica, sans-serif">
+<defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#7fa2ff"/></marker></defs>
+<defs><radialGradient id="bg" cx="50%" cy="38%" r="85%"><stop offset="0" stop-color="#1a2260"/><stop offset=".55" stop-color="#0b0f2e"/><stop offset="1" stop-color="#05071a"/></radialGradient><linearGradient id="pn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#151c4d"/><stop offset="1" stop-color="#0c1130"/></linearGradient><filter id="gl" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+<rect width="1480" height="880" fill="url(#bg)"/>
+<circle cx="663" cy="154" r="1" fill="#fff" opacity="0.25"/>
+<circle cx="148" cy="840" r="1.3" fill="#fff" opacity="0.25"/>
+<circle cx="748" cy="596" r="0.5" fill="#fff" opacity="0.4"/>
+<circle cx="76" cy="88" r="1" fill="#fff" opacity="0.85"/>
+<circle cx="143" cy="246" r="0.5" fill="#fff" opacity="0.85"/>
+<circle cx="121" cy="846" r="1.3" fill="#fff" opacity="0.25"/>
+<circle cx="457" cy="645" r="1.3" fill="#fff" opacity="0.25"/>
+<circle cx="1181" cy="599" r="1" fill="#fff" opacity="0.25"/>
+<circle cx="452" cy="47" r="1.3" fill="#fff" opacity="0.4"/>
+<circle cx="593" cy="429" r="0.6" fill="#fff" opacity="0.25"/>
+<circle cx="1169" cy="315" r="1.3" fill="#fff" opacity="0.4"/>
+<circle cx="211" cy="595" r="1.3" fill="#fff" opacity="0.4"/>
+<circle cx="762" cy="99" r="1.3" fill="#fff" opacity="0.25"/>
+<circle cx="1155" cy="61" r="1.3" fill="#fff" opacity="0.4"/>
+<circle cx="1016" cy="696" r="1.3" fill="#fff" opacity="0.85"/>
+<circle cx="643" cy="476" r="1.3" fill="#fff" opacity="0.85"/>
+<circle cx="740" cy="306" r="0.6" fill="#fff" opacity="0.4"/>
+<circle cx="1431" cy="798" r="0.6" fill="#fff" opacity="0.25"/>
+<circle cx="1176" cy="307" r="1.3" fill="#fff" opacity="0.85"/>
+<circle cx="703" cy="746" r="1" fill="#fff" opacity="0.6"/>
+<circle cx="1247" cy="74" r="0.5" fill="#fff" opacity="0.85"/>
+<circle cx="337" cy="775" r="0.8" fill="#fff" opacity="0.4"/>
+<circle cx="1001" cy="431" r="0.5" fill="#fff" opacity="0.25"/>
+<circle cx="1142" cy="586" r="0.8" fill="#fff" opacity="0.6"/>
+<circle cx="1423" cy="358" r="1.3" fill="#fff" opacity="0.85"/>
+<circle cx="1187" cy="816" r="1" fill="#fff" opacity="0.25"/>
+<circle cx="191" cy="276" r="1" fill="#fff" opacity="0.25"/>
+<circle cx="124" cy="748" r="0.8" fill="#fff" opacity="0.85"/>
+<circle cx="582" cy="733" r="1" fill="#fff" opacity="0.6"/>
+<circle cx="46" cy="472" r="0.8" fill="#fff" opacity="0.4"/>
+<circle cx="1251" cy="119" r="1" fill="#fff" opacity="0.25"/>
+<circle cx="446" cy="786" r="0.8" fill="#fff" opacity="0.4"/>
+<circle cx="507" cy="407" r="1" fill="#fff" opacity="0.85"/>
+<circle cx="165" cy="170" r="1" fill="#fff" opacity="0.85"/>
+<circle cx="1125" cy="284" r="0.6" fill="#fff" opacity="0.85"/>
+<circle cx="1126" cy="285" r="1" fill="#fff" opacity="0.6"/>
+<circle cx="1398" cy="389" r="0.6" fill="#fff" opacity="0.4"/>
+<circle cx="169" cy="180" r="0.6" fill="#fff" opacity="0.4"/>
+<circle cx="1348" cy="238" r="0.5" fill="#fff" opacity="0.85"/>
+<circle cx="1206" cy="186" r="0.8" fill="#fff" opacity="0.6"/>
+<circle cx="8" cy="149" r="1" fill="#fff" opacity="0.6"/>
+<circle cx="1248" cy="579" r="0.8" fill="#fff" opacity="0.4"/>
+<circle cx="1414" cy="879" r="1.3" fill="#fff" opacity="0.25"/>
+<circle cx="935" cy="798" r="1.3" fill="#fff" opacity="0.85"/>
+<circle cx="815" cy="408" r="1" fill="#fff" opacity="0.25"/>
+<circle cx="986" cy="649" r="1" fill="#fff" opacity="0.25"/>
+<circle cx="390" cy="68" r="0.6" fill="#fff" opacity="0.85"/>
+<circle cx="332" cy="112" r="0.8" fill="#fff" opacity="0.25"/>
+<circle cx="209" cy="0" r="1.3" fill="#fff" opacity="0.4"/>
+<circle cx="1098" cy="103" r="0.8" fill="#fff" opacity="0.25"/>
+<circle cx="144" cy="212" r="1.3" fill="#fff" opacity="0.85"/>
+<circle cx="304" cy="649" r="0.8" fill="#fff" opacity="0.6"/>
+<circle cx="1233" cy="372" r="1" fill="#fff" opacity="0.25"/>
+<circle cx="236" cy="869" r="1" fill="#fff" opacity="0.85"/>
+<circle cx="983" cy="495" r="0.8" fill="#fff" opacity="0.25"/>
+<circle cx="295" cy="104" r="0.8" fill="#fff" opacity="0.6"/>
+<circle cx="980" cy="848" r="0.6" fill="#fff" opacity="0.25"/>
+<circle cx="420" cy="540" r="0.8" fill="#fff" opacity="0.4"/>
+<circle cx="1413" cy="556" r="0.5" fill="#fff" opacity="0.6"/>
+<circle cx="1316" cy="93" r="0.8" fill="#fff" opacity="0.6"/>
+<circle cx="342" cy="364" r="0.6" fill="#fff" opacity="0.6"/>
+<circle cx="1303" cy="228" r="1.3" fill="#fff" opacity="0.4"/>
+<circle cx="490" cy="837" r="1" fill="#fff" opacity="0.4"/>
+<circle cx="409" cy="530" r="1" fill="#fff" opacity="0.6"/>
+<circle cx="59" cy="28" r="0.8" fill="#fff" opacity="0.85"/>
+<circle cx="530" cy="198" r="1.3" fill="#fff" opacity="0.6"/>
+<circle cx="915" cy="827" r="0.8" fill="#fff" opacity="0.6"/>
+<circle cx="164" cy="225" r="0.5" fill="#fff" opacity="0.4"/>
+<circle cx="962" cy="201" r="0.8" fill="#fff" opacity="0.4"/>
+<circle cx="988" cy="639" r="1.3" fill="#fff" opacity="0.25"/>
+<circle cx="981" cy="668" r="0.8" fill="#fff" opacity="0.25"/>
+<circle cx="1352" cy="122" r="1" fill="#fff" opacity="0.4"/>
+<circle cx="979" cy="182" r="1" fill="#fff" opacity="0.6"/>
+<circle cx="177" cy="820" r="1" fill="#fff" opacity="0.85"/>
+<circle cx="822" cy="761" r="0.5" fill="#fff" opacity="0.4"/>
+<circle cx="348" cy="130" r="0.5" fill="#fff" opacity="0.4"/>
+<circle cx="1209" cy="476" r="0.6" fill="#fff" opacity="0.85"/>
+<circle cx="1346" cy="358" r="0.6" fill="#fff" opacity="0.4"/>
+<circle cx="43" cy="14" r="0.5" fill="#fff" opacity="0.4"/>
+<circle cx="888" cy="199" r="0.6" fill="#fff" opacity="0.25"/>
+<circle cx="515" cy="217" r="0.8" fill="#fff" opacity="0.4"/>
+<circle cx="1201" cy="333" r="0.8" fill="#fff" opacity="0.85"/>
+<circle cx="268" cy="62" r="0.8" fill="#fff" opacity="0.85"/>
+<circle cx="1356" cy="597" r="1.3" fill="#fff" opacity="0.85"/>
+<circle cx="1027" cy="133" r="1.3" fill="#fff" opacity="0.4"/>
+<circle cx="1072" cy="522" r="0.5" fill="#fff" opacity="0.85"/>
+<circle cx="375" cy="623" r="0.5" fill="#fff" opacity="0.4"/>
+<circle cx="352" cy="144" r="1" fill="#fff" opacity="0.25"/>
+<circle cx="1139" cy="63" r="0.8" fill="#fff" opacity="0.85"/>
+<circle cx="217" cy="573" r="0.5" fill="#fff" opacity="0.4"/>
+<circle cx="391" cy="283" r="0.5" fill="#fff" opacity="0.25"/>
+<circle cx="1039" cy="463" r="1.3" fill="#fff" opacity="0.25"/>
+<circle cx="129" cy="453" r="0.8" fill="#fff" opacity="0.4"/>
+<circle cx="1418" cy="283" r="1" fill="#fff" opacity="0.85"/>
+<circle cx="1039" cy="253" r="1.3" fill="#fff" opacity="0.6"/>
+<circle cx="1145" cy="207" r="1" fill="#fff" opacity="0.4"/>
+<circle cx="853" cy="124" r="1" fill="#fff" opacity="0.85"/>
+<circle cx="647" cy="74" r="0.6" fill="#fff" opacity="0.85"/>
+<circle cx="149" cy="217" r="0.8" fill="#fff" opacity="0.25"/>
+<circle cx="316" cy="733" r="0.8" fill="#fff" opacity="0.4"/>
+<circle cx="518" cy="140" r="1" fill="#fff" opacity="0.4"/>
+<circle cx="192" cy="407" r="1" fill="#fff" opacity="0.4"/>
+<circle cx="1367" cy="852" r="0.6" fill="#fff" opacity="0.4"/>
+<circle cx="1446" cy="441" r="1.3" fill="#fff" opacity="0.85"/>
+<circle cx="694" cy="431" r="0.6" fill="#fff" opacity="0.6"/>
+<circle cx="652" cy="94" r="0.8" fill="#fff" opacity="0.25"/>
+<circle cx="692" cy="567" r="1" fill="#fff" opacity="0.85"/>
+<circle cx="1440" cy="18" r="1" fill="#fff" opacity="0.6"/>
+<circle cx="1059" cy="638" r="0.8" fill="#fff" opacity="0.25"/>
+<circle cx="231" cy="807" r="0.6" fill="#fff" opacity="0.25"/>
+<circle cx="172" cy="271" r="0.8" fill="#fff" opacity="0.25"/>
+<circle cx="371" cy="276" r="0.6" fill="#fff" opacity="0.85"/>
+<circle cx="1384" cy="838" r="0.8" fill="#fff" opacity="0.85"/>
+<circle cx="305" cy="549" r="1.3" fill="#fff" opacity="0.85"/>
+<circle cx="1434" cy="334" r="0.5" fill="#fff" opacity="0.6"/>
+<circle cx="117" cy="818" r="0.6" fill="#fff" opacity="0.85"/>
+<circle cx="148" cy="275" r="0.5" fill="#fff" opacity="0.25"/>
+<circle cx="533" cy="85" r="1.3" fill="#fff" opacity="0.4"/>
+<circle cx="136" cy="270" r="0.5" fill="#fff" opacity="0.85"/>
+<circle cx="23" cy="347" r="1.3" fill="#fff" opacity="0.85"/>
+<circle cx="548" cy="636" r="0.6" fill="#fff" opacity="0.25"/>
+<circle cx="1079" cy="726" r="0.6" fill="#fff" opacity="0.25"/>
+<circle cx="330" cy="268" r="0.5" fill="#fff" opacity="0.4"/>
+<circle cx="413" cy="319" r="0.8" fill="#fff" opacity="0.4"/>
+<circle cx="593" cy="456" r="1.3" fill="#fff" opacity="0.4"/>
+<circle cx="554" cy="355" r="0.5" fill="#fff" opacity="0.6"/>
+<circle cx="75" cy="15" r="0.5" fill="#fff" opacity="0.4"/>
+<circle cx="1053" cy="486" r="0.6" fill="#fff" opacity="0.85"/>
+<circle cx="217" cy="674" r="1" fill="#fff" opacity="0.85"/>
+<circle cx="1118" cy="854" r="1" fill="#fff" opacity="0.6"/>
+<circle cx="1408" cy="220" r="0.6" fill="#fff" opacity="0.6"/>
+<circle cx="406" cy="852" r="0.6" fill="#fff" opacity="0.85"/>
+<circle cx="711" cy="55" r="0.6" fill="#fff" opacity="0.25"/>
+<circle cx="144" cy="640" r="0.8" fill="#fff" opacity="0.85"/>
+<circle cx="334" cy="56" r="0.5" fill="#fff" opacity="0.85"/>
+<circle cx="1036" cy="686" r="0.8" fill="#fff" opacity="0.4"/>
+<circle cx="1418" cy="300" r="0.5" fill="#fff" opacity="0.85"/>
+<circle cx="379" cy="161" r="0.8" fill="#fff" opacity="0.85"/>
+<circle cx="7" cy="269" r="0.8" fill="#fff" opacity="0.6"/>
+<circle cx="1120" cy="331" r="0.6" fill="#fff" opacity="0.25"/>
+<circle cx="633" cy="223" r="0.8" fill="#fff" opacity="0.4"/>
+<circle cx="2" cy="343" r="1" fill="#fff" opacity="0.25"/>
+<circle cx="972" cy="285" r="1.3" fill="#fff" opacity="0.4"/>
+<circle cx="508" cy="516" r="0.5" fill="#fff" opacity="0.25"/>
+<circle cx="541" cy="836" r="0.5" fill="#fff" opacity="0.4"/>
+<circle cx="818" cy="600" r="0.5" fill="#fff" opacity="0.85"/>
+<circle cx="46" cy="306" r="0.8" fill="#fff" opacity="0.4"/>
+<circle cx="173" cy="599" r="1.3" fill="#fff" opacity="0.4"/>
+<circle cx="1346" cy="733" r="1.3" fill="#fff" opacity="0.85"/>
+<circle cx="667" cy="737" r="1" fill="#fff" opacity="0.4"/>
+<circle cx="581" cy="741" r="1.3" fill="#fff" opacity="0.4"/>
+<circle cx="89" cy="844" r="1.3" fill="#fff" opacity="0.85"/>
+<circle cx="1435" cy="831" r="1.3" fill="#fff" opacity="0.4"/>
+<circle cx="1072" cy="770" r="1.3" fill="#fff" opacity="0.25"/>
+<circle cx="1405" cy="598" r="0.6" fill="#fff" opacity="0.25"/>
+<circle cx="63" cy="42" r="0.6" fill="#fff" opacity="0.6"/>
+<circle cx="214" cy="385" r="1" fill="#fff" opacity="0.25"/>
+<circle cx="1285" cy="19" r="1.3" fill="#fff" opacity="0.4"/>
+<circle cx="1002" cy="270" r="0.5" fill="#fff" opacity="0.85"/>
+<circle cx="143" cy="766" r="1.3" fill="#fff" opacity="0.25"/>
+<circle cx="1350" cy="538" r="0.5" fill="#fff" opacity="0.85"/>
+<circle cx="516" cy="828" r="0.5" fill="#fff" opacity="0.6"/>
+<circle cx="480" cy="746" r="0.6" fill="#fff" opacity="0.4"/>
+<circle cx="1331" cy="471" r="1" fill="#fff" opacity="0.85"/>
+<circle cx="157" cy="490" r="0.8" fill="#fff" opacity="0.25"/>
+<circle cx="1263" cy="647" r="0.6" fill="#fff" opacity="0.25"/>
+<circle cx="1228" cy="150" r="0.8" fill="#fff" opacity="0.6"/>
+<circle cx="1334" cy="761" r="0.8" fill="#fff" opacity="0.4"/>
+<circle cx="25" cy="493" r="0.5" fill="#fff" opacity="0.85"/>
+<circle cx="550" cy="688" r="0.5" fill="#fff" opacity="0.4"/>
+<circle cx="1390" cy="60" r="20" fill="#cfd6ff" opacity=".10"/><circle cx="1396" cy="56" r="14" fill="#cfd6ff" opacity=".10"/>
+<text x="30" y="52" font-size="15" font-weight="700" fill="#cfd8ff" letter-spacing="3">GAME HUB · ARCHITECTURE</text>
+<rect x="20" y="70" width="160" height="690" rx="12" fill="url(#pn)" stroke="#5b6bff" stroke-width="1.2"/>
+<text x="100" y="98" font-size="10.5" font-weight="700" text-anchor="middle" fill="#9db8ff">External Services</text>
+<text x="100" y="111" font-size="10.5" font-weight="700" text-anchor="middle" fill="#9db8ff">&amp; Libraries</text>
+<line x1="20" y1="122" x2="180" y2="122" stroke="#4a5cff"/>
+<text x="100" y="140" font-size="9" font-weight="600" text-anchor="middle" fill="#8fa3ff">Networking</text>
+<text x="55" y="185" font-size="24" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">🌐</text>
+<text x="125" y="172" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">PeerJS cloud</text>
+<text x="125" y="183" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">(matchmaking /</text>
+<text x="125" y="194" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">signalling)</text>
+<text x="55" y="238" font-size="24" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">🔁</text>
+<text x="125" y="232" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">TURN relay</text>
+<text x="125" y="243" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">(optional, your</text>
+<text x="125" y="254" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">own credentials)</text>
+<line x1="20" y1="262" x2="180" y2="262" stroke="#4a5cff" stroke-dasharray="3 3"/>
+<text x="100" y="278" font-size="9" font-weight="600" text-anchor="middle" fill="#8fa3ff">Accounts &amp; Data</text>
+<text x="55" y="322" font-size="24" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">🔥</text>
+<text x="125" y="312" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">Firebase</text>
+<text x="125" y="323" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">Authentication</text>
+<text x="125" y="334" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">(e-mail + password)</text>
+<text x="55" y="380" font-size="24" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">🗄️</text>
+<text x="125" y="374" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">Cloud Firestore</text>
+<text x="125" y="385" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">(invites, users,</text>
+<text x="125" y="396" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">activity, recovery)</text>
+<line x1="20" y1="402" x2="180" y2="402" stroke="#4a5cff" stroke-dasharray="3 3"/>
+<text x="100" y="418" font-size="9" font-weight="600" text-anchor="middle" fill="#8fa3ff">E-mail</text>
+<text x="55" y="462" font-size="24" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">✉️</text>
+<text x="125" y="452" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">EmailJS</text>
+<text x="125" y="463" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">(secret-draw and</text>
+<text x="125" y="474" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">invite e-mails)</text>
+<line x1="20" y1="484" x2="180" y2="484" stroke="#4a5cff" stroke-dasharray="3 3"/>
+<text x="100" y="500" font-size="9" font-weight="600" text-anchor="middle" fill="#8fa3ff">Libraries &amp; CDN</text>
+<text x="55" y="544" font-size="24" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">📦</text>
+<text x="125" y="540" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">PeerJS library</text>
+<text x="125" y="551" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">(unpkg / jsDelivr)</text>
+<text x="55" y="592" font-size="24" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">📦</text>
+<text x="125" y="588" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">Firebase JS SDK</text>
+<text x="125" y="599" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">(gstatic.com)</text>
+<text x="55" y="640" font-size="24" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">🔤</text>
+<text x="125" y="636" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">Google Fonts</text>
+<text x="125" y="647" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">(Fredoka)</text>
+<rect x="210" y="70" width="1080" height="115" rx="12" fill="url(#pn)" stroke="#5b6bff" stroke-width="1.2"/>
+<text x="285" y="125" font-size="13" font-weight="700" text-anchor="middle" fill="#9db8ff">User Interaction</text>
+<text x="285" y="141" font-size="13" font-weight="700" text-anchor="middle" fill="#9db8ff">Layer</text>
+<text x="400" y="110" font-size="28" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">👤</text>
+<text x="400" y="130" font-size="10.5" font-weight="600" text-anchor="middle" fill="#e9edff">Players</text>
+<text x="400" y="143.0" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">(browser / phone)</text>
+<text x="555" y="110" font-size="28" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">🖥️</text>
+<text x="555" y="130" font-size="10.5" font-weight="600" text-anchor="middle" fill="#e9edff">Web UI</text>
+<text x="555" y="143.0" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">single page</text>
+<text x="555" y="153.5" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">(index.html)</text>
+<text x="725" y="110" font-size="28" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">🔑</text>
+<text x="725" y="130" font-size="10.5" font-weight="600" text-anchor="middle" fill="#e9edff">Sign in / Register</text>
+<text x="725" y="143.0" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">invite-only ·</text>
+<text x="725" y="153.5" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">forgot password</text>
+<text x="895" y="110" font-size="28" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">📊</text>
+<text x="895" y="130" font-size="10.5" font-weight="600" text-anchor="middle" fill="#e9edff">My Activity</text>
+<text x="895" y="143.0" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">personal stats</text>
+<text x="895" y="153.5" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">&amp; recovery question</text>
+<text x="1090" y="110" font-size="28" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">🛡️</text>
+<text x="1090" y="130" font-size="10.5" font-weight="600" text-anchor="middle" fill="#e9edff">Admin Dashboard</text>
+<text x="1090" y="143.0" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">people, invites,</text>
+<text x="1090" y="153.5" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">activity &amp; roles</text>
+<line x1="750" y1="185" x2="750" y2="222" stroke="#7fa2ff" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="210" y="222" width="1080" height="233" rx="12" fill="url(#pn)" stroke="#5b6bff" stroke-width="1.2"/>
+<text x="325" y="335" font-size="14" font-weight="700" text-anchor="middle" fill="#9db8ff">Game Layer</text>
+<rect x="440" y="228" width="545" height="219" rx="10" fill="#0a0f2b" stroke="#6f7dff" stroke-width="1.2"/>
+<text x="712" y="243" font-size="9.5" font-weight="600" text-anchor="middle" fill="#e9edff">Game Host Engine – runs in the host's browser (the host is the single source of truth)</text>
+<rect x="452" y="252" width="122" height="66" rx="8" fill="#161e50" stroke="#3a4ad0" stroke-width="1"/>
+<text x="471" y="280" font-size="20" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">🎯</text>
+<text x="526" y="272" font-size="9.5" font-weight="600" text-anchor="middle" fill="#e9edff">Number Game</text>
+<text x="513" y="298.0" font-size="8" font-weight="400" text-anchor="middle" fill="#a9b4e6">N / P digit clues</text>
+<rect x="585" y="252" width="122" height="66" rx="8" fill="#161e50" stroke="#3a4ad0" stroke-width="1"/>
+<text x="604" y="280" font-size="20" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">🕵️</text>
+<text x="659" y="272" font-size="9.5" font-weight="600" text-anchor="middle" fill="#e9edff">Who Is the Spy?</text>
+<text x="646" y="298.0" font-size="8" font-weight="400" text-anchor="middle" fill="#a9b4e6">roles, clues, votes</text>
+<rect x="718" y="252" width="122" height="66" rx="8" fill="#161e50" stroke="#3a4ad0" stroke-width="1"/>
+<text x="737" y="280" font-size="20" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">👑</text>
+<text x="792" y="272" font-size="9.5" font-weight="600" text-anchor="middle" fill="#e9edff">Raja Rani</text>
+<text x="779" y="294.0" font-size="8" font-weight="400" text-anchor="middle" fill="#a9b4e6">secret roles,</text>
+<text x="779" y="303.5" font-size="8" font-weight="400" text-anchor="middle" fill="#a9b4e6">Police guess</text>
+<rect x="851" y="252" width="122" height="66" rx="8" fill="#161e50" stroke="#3a4ad0" stroke-width="1"/>
+<text x="870" y="280" font-size="20" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">🎨</text>
+<text x="925" y="272" font-size="9.5" font-weight="600" text-anchor="middle" fill="#e9edff">Scribblio</text>
+<text x="912" y="294.0" font-size="8" font-weight="400" text-anchor="middle" fill="#a9b4e6">draw &amp; guess,</text>
+<text x="912" y="303.5" font-size="8" font-weight="400" text-anchor="middle" fill="#a9b4e6">live canvas</text>
+<rect x="452" y="324" width="122" height="66" rx="8" fill="#161e50" stroke="#3a4ad0" stroke-width="1"/>
+<text x="471" y="352" font-size="20" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">♟️</text>
+<text x="526" y="344" font-size="9.5" font-weight="600" text-anchor="middle" fill="#e9edff">Chess</text>
+<text x="513" y="366.0" font-size="8" font-weight="400" text-anchor="middle" fill="#a9b4e6">2 / 3 / 4 players,</text>
+<text x="513" y="375.5" font-size="8" font-weight="400" text-anchor="middle" fill="#a9b4e6">computer, clocks</text>
+<rect x="585" y="324" width="122" height="66" rx="8" fill="#161e50" stroke="#3a4ad0" stroke-width="1"/>
+<text x="604" y="352" font-size="20" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">🎲</text>
+<text x="659" y="344" font-size="9.5" font-weight="600" text-anchor="middle" fill="#e9edff">Dots and Boxes</text>
+<text x="646" y="370.0" font-size="8" font-weight="400" text-anchor="middle" fill="#a9b4e6">dice, lines, boxes</text>
+<rect x="718" y="324" width="122" height="66" rx="8" fill="#161e50" stroke="#3a4ad0" stroke-width="1"/>
+<text x="737" y="352" font-size="20" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">🏁</text>
+<text x="792" y="344" font-size="9.5" font-weight="600" text-anchor="middle" fill="#e9edff">Ludo</text>
+<text x="779" y="366.0" font-size="8" font-weight="400" text-anchor="middle" fill="#a9b4e6">4 / 6 colours,</text>
+<text x="779" y="375.5" font-size="8" font-weight="400" text-anchor="middle" fill="#a9b4e6">computer seats</text>
+<rect x="851" y="324" width="122" height="66" rx="8" fill="#161e50" stroke="#3a4ad0" stroke-width="1"/>
+<text x="870" y="352" font-size="20" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">✊</text>
+<text x="929" y="342" font-size="9" font-weight="600" text-anchor="middle" fill="#e9edff">Rock Paper</text>
+<text x="929" y="353" font-size="9" font-weight="600" text-anchor="middle" fill="#e9edff">Scissors</text>
+<text x="912" y="366.0" font-size="8" font-weight="400" text-anchor="middle" fill="#a9b4e6">duel, knockout,</text>
+<text x="912" y="375.5" font-size="8" font-weight="400" text-anchor="middle" fill="#a9b4e6">computer</text>
+<rect x="452" y="398" width="521" height="41" rx="8" fill="#161e50" stroke="#3a4ad0" stroke-width="1"/>
+<text x="712" y="415" font-size="9.5" font-weight="600" text-anchor="middle" fill="#e9edff">Room state: players · settings · rounds · scores · timers (500 ms host tick) · kick / leave handling</text>
+<text x="712" y="429" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">Computer players (chess engine, Ludo bot, Rock Paper Scissors) are run by the host too</text>
+<rect x="1102" y="238" width="166" height="199" rx="10" fill="#0a0f2b" stroke="#6f7dff" stroke-width="1.2"/>
+<text x="1185" y="256" font-size="10" font-weight="600" text-anchor="middle" fill="#e9edff">Views &amp; Events</text>
+<text x="1185" y="276" font-size="9" font-weight="400" text-anchor="middle" fill="#a9b4e6">Per-player views</text>
+<text x="1185" y="287" font-size="9" font-weight="400" text-anchor="middle" fill="#a9b4e6">(secrets never leave</text>
+<text x="1185" y="298" font-size="9" font-weight="400" text-anchor="middle" fill="#a9b4e6">the host)</text>
+<line x1="1115" y1="318" x2="1255" y2="318" stroke="#2c3780"/>
+<text x="1185" y="336" font-size="9" font-weight="400" text-anchor="middle" fill="#a9b4e6">Ejection &amp; role</text>
+<text x="1185" y="347" font-size="9" font-weight="400" text-anchor="middle" fill="#a9b4e6">cut-scenes (with sound)</text>
+<line x1="1115" y1="364" x2="1255" y2="364" stroke="#2c3780"/>
+<text x="1185" y="382" font-size="9" font-weight="400" text-anchor="middle" fill="#a9b4e6">Toasts, kick / leave</text>
+<text x="1185" y="393" font-size="9" font-weight="400" text-anchor="middle" fill="#a9b4e6">notices, results</text>
+<line x1="985" y1="338" x2="1102" y2="338" stroke="#7fa2ff" stroke-width="1.2" marker-end="url(#a)"/>
+<line x1="750" y1="455" x2="750" y2="480" stroke="#7fa2ff" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="210" y="480" width="1080" height="112" rx="12" fill="url(#pn)" stroke="#5b6bff" stroke-width="1.2"/>
+<text x="325" y="540" font-size="14" font-weight="700" text-anchor="middle" fill="#9db8ff">Networking Layer</text>
+<text x="520" y="515" font-size="24" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">🔗</text>
+<text x="520" y="540" font-size="10" font-weight="600" text-anchor="middle" fill="#e9edff">Room code &amp; invite link</text>
+<text x="520" y="553.0" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">5-letter code ·</text>
+<text x="520" y="563.5" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">?room=CODE</text>
+<line x1="598" y1="520" x2="632" y2="520" stroke="#7fa2ff" stroke-width="1.2" marker-end="url(#a)"/>
+<text x="710" y="515" font-size="24" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">📡</text>
+<text x="710" y="540" font-size="10" font-weight="600" text-anchor="middle" fill="#e9edff">PeerJS host (WebRTC)</text>
+<text x="710" y="553.0" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">guests ↔ host</text>
+<text x="710" y="563.5" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">star topology</text>
+<line x1="788" y1="520" x2="822" y2="520" stroke="#7fa2ff" stroke-width="1.2" marker-end="url(#a)"/>
+<text x="900" y="515" font-size="24" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">✉</text>
+<text x="900" y="540" font-size="10" font-weight="600" text-anchor="middle" fill="#e9edff">Messages</text>
+<text x="900" y="553.0" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">join · state · act ·</text>
+<text x="900" y="563.5" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">draw · toast · kicked</text>
+<line x1="978" y1="520" x2="1012" y2="520" stroke="#7fa2ff" stroke-width="1.2" marker-end="url(#a)"/>
+<text x="1090" y="515" font-size="24" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">🔄</text>
+<text x="1090" y="540" font-size="10" font-weight="600" text-anchor="middle" fill="#e9edff">Reconnect &amp; ICE</text>
+<text x="1090" y="553.0" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">auto-rejoin on refresh,</text>
+<text x="1090" y="563.5" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">STUN / optional TURN</text>
+<line x1="750" y1="592" x2="750" y2="610" stroke="#7fa2ff" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="210" y="610" width="1080" height="112" rx="12" fill="url(#pn)" stroke="#5b6bff" stroke-width="1.2"/>
+<text x="325" y="660" font-size="14" font-weight="700" text-anchor="middle" fill="#9db8ff">Accounts &amp; Data</text>
+<text x="325" y="677" font-size="14" font-weight="700" text-anchor="middle" fill="#9db8ff">Layer</text>
+<text x="495" y="648" font-size="24" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">🔐</text>
+<text x="495" y="672" font-size="9.5" font-weight="600" text-anchor="middle" fill="#e9edff">Firebase Auth</text>
+<text x="495" y="684" font-size="8" font-weight="400" text-anchor="middle" fill="#a9b4e6">e-mail + password</text>
+<line x1="551" y1="648" x2="569" y2="648" stroke="#7fa2ff" stroke-width="1.2" marker-end="url(#a)"/>
+<text x="623" y="648" font-size="24" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">📨</text>
+<text x="623" y="672" font-size="9.5" font-weight="600" text-anchor="middle" fill="#e9edff">Invite check</text>
+<text x="623" y="684" font-size="8" font-weight="400" text-anchor="middle" fill="#a9b4e6">only invited e-mails</text>
+<text x="623" y="694" font-size="8" font-weight="400" text-anchor="middle" fill="#a9b4e6">can register</text>
+<line x1="679" y1="648" x2="697" y2="648" stroke="#7fa2ff" stroke-width="1.2" marker-end="url(#a)"/>
+<text x="751" y="648" font-size="24" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">📈</text>
+<text x="751" y="672" font-size="9.5" font-weight="600" text-anchor="middle" fill="#e9edff">Activity tracking</text>
+<text x="751" y="684" font-size="8" font-weight="400" text-anchor="middle" fill="#a9b4e6">logins, games, play</text>
+<text x="751" y="694" font-size="8" font-weight="400" text-anchor="middle" fill="#a9b4e6">time, online presence</text>
+<line x1="807" y1="648" x2="825" y2="648" stroke="#7fa2ff" stroke-width="1.2" marker-end="url(#a)"/>
+<text x="879" y="648" font-size="24" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">🧩</text>
+<text x="879" y="672" font-size="9.5" font-weight="600" text-anchor="middle" fill="#e9edff">Password recovery</text>
+<text x="879" y="684" font-size="8" font-weight="400" text-anchor="middle" fill="#a9b4e6">security question,</text>
+<text x="879" y="694" font-size="8" font-weight="400" text-anchor="middle" fill="#a9b4e6">no e-mail needed</text>
+<line x1="990" y1="665" x2="1015" y2="665" stroke="#7fa2ff" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="1018" y="620" width="260" height="92" rx="10" fill="#0a0f2b" stroke="#8fa3ff" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="1148" y="636" font-size="9.5" font-weight="700" text-anchor="middle" fill="#9db8ff">Cloud Firestore</text>
+<text x="1083" y="652" font-size="8.5" font-weight="600" text-anchor="middle" fill="#e9edff">invites/&lt;email&gt;</text>
+<text x="1083" y="662" font-size="7" font-weight="400" text-anchor="middle" fill="#a9b4e6">status: invited / registered / removed</text>
+<text x="1213" y="652" font-size="8.5" font-weight="600" text-anchor="middle" fill="#e9edff">users/&lt;uid&gt;</text>
+<text x="1213" y="662" font-size="7" font-weight="400" text-anchor="middle" fill="#a9b4e6">profile, role, last sign-in, stats</text>
+<text x="1083" y="686" font-size="8.5" font-weight="600" text-anchor="middle" fill="#e9edff">users/&lt;uid&gt;/activity</text>
+<text x="1083" y="696" font-size="7" font-weight="400" text-anchor="middle" fill="#a9b4e6">sign-ins and games played</text>
+<text x="1213" y="686" font-size="8.5" font-weight="600" text-anchor="middle" fill="#e9edff">recovery/&lt;email&gt;</text>
+<text x="1213" y="696" font-size="7" font-weight="400" text-anchor="middle" fill="#a9b4e6">encrypted password record</text>
+<line x1="750" y1="722" x2="750" y2="748" stroke="#7fa2ff" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="210" y="748" width="1080" height="106" rx="12" fill="url(#pn)" stroke="#5b6bff" stroke-width="1.2"/>
+<text x="325" y="800" font-size="14" font-weight="700" text-anchor="middle" fill="#9db8ff">Infrastructure Layer</text>
+<text x="455" y="786" font-size="24" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">🌍</text>
+<text x="455" y="810" font-size="10" font-weight="600" text-anchor="middle" fill="#e9edff">GitHub Pages</text>
+<text x="455" y="822.0" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">static hosting</text>
+<text x="455" y="832.5" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">(anchana-techie.github.io)</text>
+<text x="633" y="786" font-size="24" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">📴</text>
+<text x="633" y="810" font-size="10" font-weight="600" text-anchor="middle" fill="#e9edff">Service Worker</text>
+<text x="633" y="822.0" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">offline cache</text>
+<text x="633" y="832.5" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">(sw.js)</text>
+<text x="811" y="786" font-size="24" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">💾</text>
+<text x="811" y="810" font-size="10" font-weight="600" text-anchor="middle" fill="#e9edff">Browser storage</text>
+<text x="811" y="822.0" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">local / session</text>
+<text x="811" y="832.5" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">storage</text>
+<text x="989" y="786" font-size="24" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">🔥</text>
+<text x="989" y="810" font-size="10" font-weight="600" text-anchor="middle" fill="#e9edff">Firebase project</text>
+<text x="989" y="822.0" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">Auth + Firestore</text>
+<text x="989" y="832.5" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">(Spark plan)</text>
+<text x="1167" y="786" font-size="24" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">🌐</text>
+<text x="1167" y="810" font-size="10" font-weight="600" text-anchor="middle" fill="#e9edff">PeerJS cloud</text>
+<text x="1167" y="822.0" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">free matchmaking</text>
+<text x="1167" y="832.5" font-size="8.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">server</text>
+<line x1="180" y1="538" x2="210" y2="538" stroke="#7fa2ff" stroke-width="1.2" marker-end="url(#a)"/>
+<line x1="180" y1="665" x2="210" y2="665" stroke="#7fa2ff" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="1345" y="222" width="130" height="228" rx="12" fill="url(#pn)" stroke="#5b6bff" stroke-width="1.2"/>
+<text x="1410" y="238" font-size="9" font-weight="700" text-anchor="middle" fill="#9db8ff">Cross-Cutting Services</text>
+<rect x="1353" y="246" width="114" height="44" rx="8" fill="#161e50" stroke="#3a4ad0" stroke-width="1.2"/>
+<text x="1371" y="274" font-size="18" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">🛂</text>
+<text x="1423" y="263.0" font-size="7.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">Authentication &amp;</text>
+<text x="1423" y="272.5" font-size="7.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">Authorization</text>
+<text x="1423" y="282.0" font-size="7.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">(invite-only, roles)</text>
+<rect x="1353" y="296" width="114" height="44" rx="8" fill="#161e50" stroke="#3a4ad0" stroke-width="1.2"/>
+<text x="1371" y="324" font-size="18" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">📝</text>
+<text x="1423" y="313.0" font-size="7.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">Activity tracking</text>
+<text x="1423" y="322.5" font-size="7.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">&amp; presence</text>
+<rect x="1353" y="346" width="114" height="44" rx="8" fill="#161e50" stroke="#3a4ad0" stroke-width="1.2"/>
+<text x="1371" y="374" font-size="18" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">🛡</text>
+<text x="1423" y="363.0" font-size="7.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">Security rules</text>
+<text x="1423" y="372.5" font-size="7.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">(Firestore)</text>
+<rect x="1353" y="396" width="114" height="44" rx="8" fill="#161e50" stroke="#3a4ad0" stroke-width="1.2"/>
+<text x="1371" y="424" font-size="18" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">⚠️</text>
+<text x="1423" y="413.0" font-size="7.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">Offline &amp; error</text>
+<text x="1423" y="422.5" font-size="7.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">pages, auto-reconnect</text>
+<line x1="1290" y1="338" x2="1345" y2="338" stroke="#7fa2ff" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="1345" y="480" width="130" height="242" rx="12" fill="url(#pn)" stroke="#5b6bff" stroke-width="1.2"/>
+<text x="1410" y="496" font-size="9" font-weight="700" text-anchor="middle" fill="#9db8ff">Outputs</text>
+<rect x="1353" y="504" width="114" height="44" rx="8" fill="#161e50" stroke="#3a4ad0" stroke-width="1.2"/>
+<text x="1371" y="532" font-size="18" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">🏆</text>
+<text x="1423" y="522.0" font-size="7.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">Game results,</text>
+<text x="1423" y="531.5" font-size="7.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">scores &amp; rankings</text>
+<rect x="1353" y="554" width="114" height="44" rx="8" fill="#161e50" stroke="#3a4ad0" stroke-width="1.2"/>
+<text x="1371" y="582" font-size="18" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">📊</text>
+<text x="1423" y="572.0" font-size="7.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">Admin insights</text>
+<text x="1423" y="581.5" font-size="7.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">(people &amp; activity)</text>
+<rect x="1353" y="604" width="114" height="44" rx="8" fill="#161e50" stroke="#3a4ad0" stroke-width="1.2"/>
+<text x="1371" y="632" font-size="18" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">📒</text>
+<text x="1423" y="622.0" font-size="7.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">Personal activity</text>
+<text x="1423" y="631.5" font-size="7.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">statistics</text>
+<rect x="1353" y="654" width="114" height="44" rx="8" fill="#161e50" stroke="#3a4ad0" stroke-width="1.2"/>
+<text x="1371" y="682" font-size="18" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">✉️</text>
+<text x="1423" y="672.0" font-size="7.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">Secret-draw &amp;</text>
+<text x="1423" y="681.5" font-size="7.5" font-weight="400" text-anchor="middle" fill="#a9b4e6">invite e-mails</text>
+<line x1="1290" y1="666" x2="1345" y2="666" stroke="#7fa2ff" stroke-width="1.2" marker-end="url(#a)"/>
+</svg>
