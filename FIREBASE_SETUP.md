@@ -8,10 +8,13 @@ Until you finish step 3 the hub works exactly as before – nobody is asked to l
    - *Authentication → Settings → Authorized domains*: add the domain you host on (and `127.0.0.1` for Live Server).
    - *Build → Firestore Database → Create database* (production mode, any region).
 3. **Add your keys** – *Project settings → General → Your apps → Web app (</>)* → copy the `firebaseConfig` values into [firebase-config.js](firebase-config.js).
-4. **Publish the rules** – Firestore → *Rules* → paste the contents of [firestore.rules](firestore.rules) → *Publish*. (If you change the admin e-mail, change it in both files.)
-5. **Create the admin account** – open the hub → *Register* → `admin@gamehubverse.com` (no invite needed for this one address), choose a password, then click the link in the verification e-mail. The admin mailbox must be able to receive that e-mail. The first time the admin signs in, a profile with `role: admin` is created in Firestore (`users/<uid>`), so the admin is present in Firebase.
-   Do this straight away – whoever registers that address first owns the admin role.
-6. **Invite people** – signed in as admin: *🛡 Admin → Invite someone*. Send them the site link (the *🔗 Link* button copies an invite message). They open it, choose *Register*, use the invited e-mail, verify it, and they're in.
+4. **Publish the rules** – Firestore → *Rules* → paste the contents of [firestore.rules](firestore.rules) → *Publish*. 
+5. **Create the admin** – admin is a *role* on the profile (`users/<uid>` with `role: "admin"`), the same idea as the `members` collection in your other project.
+   1. Firebase → *Authentication → Users → Add user*: e-mail `admin@gamehubverse.com` + a password. Copy the new user's **User UID**.
+   2. *Firestore → Start collection* `users` → document ID = that UID, with fields: `email` (string) `admin@gamehubverse.com`, `name` (string) `Admin`, `role` (string) `admin`.
+   3. Open the hub and sign in – the 🛡 Admin button appears. Add a recovery question under *📊 My activity → 🔐 Password recovery*.
+   Later, the admin can make any registered person an admin (or remove the role) from the Admin view (*⭐ Make admin*).
+6. **Invite people** – signed in as admin: *🛡 Admin → Invite someone*. Send them the site link (the *🔗 Link* button copies an invite message). They open it, choose *Register*, use the invited e-mail, pick a password and a recovery question, and they're in.
 
 ## How it works
 | Thing | Where |
@@ -27,3 +30,6 @@ Until you finish step 3 the hub works exactly as before – nobody is asked to l
 - Anyone can look up whether a specific e-mail is invited (needed to validate registration) but cannot list invites.
 - Game stats are written by each player's own browser, so they are trustworthy for a friends group but not tamper-proof.
 - Online status uses a 60-second heartbeat while the page is open.
+
+## Forgotten passwords (no e-mail needed)
+At registration each person picks a recovery question and answer. *Forgot password* asks for their e-mail and the answer, then lets them choose a new password. The answer is never stored: the password is kept encrypted under a key derived from it (`recovery/<email>`), so a **strong, hard-to-guess answer matters** – anyone who can guess it can take the account. Existing accounts (like the admin) can add a question under *📊 My activity → 🔐 Password recovery*. Removing an account also deletes its recovery record.

@@ -2,7 +2,6 @@
    These web keys are not secrets: access is protected by the rules in firestore.rules.
    If apiKey is missing or still says YOUR_API_KEY the hub runs without logins. */
 window.GH_FIREBASE = {
-  adminEmail: "admin@gamehubverse.com",
   config: {
     apiKey: "AIzaSyCM67aI0ZlMQJ6YwTP92LRRsKNrHDa8VFg",
     authDomain: "gamehubverse-c88ab.firebaseapp.com",

@@ -2622,6 +2622,7 @@ function modalYes(){
   else if(a==="kick"&&m.pid) sendAct({a:"kick",pid:m.pid});
   else if(a==="chresign") sendAct({a:"resign"});
   else if(a==="fbremove"&&m.key) admRemove(m.key);
+  else if(a==="fbrole"&&m.key) admSetRole(m.key,m.role);
   else if(a==="closeroom") leaveRoom(true);
   else if(a==="leaveroom") leaveRoom(true);
 }
@@ -3954,21 +3955,24 @@ function onAppClick(e){
   const t=e.target.closest("[data-a]"); if(!t||t.disabled) return;
   switch(t.dataset.a){
     case "home": goHome(); break;
-    case "authMode": AUTH.mode=t.dataset.mode; AUTH.err=null; AUTH.info=null; render(); break;
+    case "authMode": AUTH.mode=t.dataset.mode; AUTH.fg=null; AUTH.err=null; AUTH.info=null; render(); break;
     case "authLogin": doAuthLogin(); break;
     case "authRegister": doAuthRegister(); break;
-    case "authReset": doAuthReset(); break;
-    case "authRecheck": doAuthRecheck(); break;
-    case "authResend": doAuthResend(); break;
+    case "authFgFind": doAuthFgFind(); break;
+    case "authFgReset": doAuthFgReset(); break;
+    case "authFgBack": AUTH.fg=null; AUTH.err=null; render(); break;
+    case "recSave": doRecSave(); break;
     case "authLogout": doAuthLogout(); break;
     case "authRetry": fbInit(); break;
     case "goAdmin": S.notice=null; S.screen="admin"; render(); break;
-    case "goMyStats": S.notice=null; S.screen="mystats"; AUTH.my.act=null; render(); if(AUTH.user&&FBD) admLoadAct(AUTH.user.uid,AUTH.my,"act"); break;
+    case "goMyStats": S.notice=null; S.screen="mystats"; AUTH.my.act=null; render(); if(AUTH.user&&FBD){ admLoadAct(AUTH.user.uid,AUTH.my,"act"); FBD.collection("recovery").doc(AUTH.user.email.toLowerCase()).get().then(d=>{ AUTH.my.rec=d.exists; render(); }).catch(()=>{}); } break;
     case "admInvite": admInvite(); break;
     case "admToggle": { const k=t.dataset.key, u=Object.values(AUTH.adm.users).find(x=>x.email===k); AUTH.adm.open=AUTH.adm.open===k?null:k; render(); if(AUTH.adm.open&&u) admLoadAct(u.id,AUTH.adm.act,u.id); break; }
     case "admRemove": { const k=t.dataset.key, has=Object.values(AUTH.adm.users).some(x=>x.email===k);
       showModal({title:has?"Remove this account?":"Revoke this invite?",text:has?k+" will be signed out of Game Hub, lose their history and can't register again unless you invite them again.":k+" will no longer be able to register.",ok:has?"Remove account":"Revoke invite",danger:true,act:"fbremove",key:k}); break; }
     case "admReinvite": admReinvite(t.dataset.key); break;
+    case "admRole": { const k=t.dataset.key, r=t.dataset.role;
+      showModal({title:r==="admin"?"Make this person an admin?":"Remove admin role?",text:r==="admin"?k+" will be able to invite, remove and see everyone's activity.":k+" will become a normal player.",ok:r==="admin"?"Make admin":"Remove admin role",danger:r!=="admin",act:"fbrole",key:k,role:r}); break; }
     case "admMail": admMail(t.dataset.key); break;
     case "admCopy": try{ navigator.clipboard.writeText("You're invited to Game Hub: "+admLink()+" – choose Register and use "+t.dataset.key); toast("Invite message copied – paste it to them.","ok"); }catch(x){ toast(admLink(),"info"); } break;
     case "go": S.notice=null; S.game=t.dataset.g; S.screen="entry"; render(); break;
@@ -4038,7 +4042,8 @@ function onAppKey(e){
   else if(id==="guess") doGuess();
   else if(id==="skChat") doSkChat();
   else if(id==="joinCode") joinRoom(S.ui.joinCode||"");
-  else if(id==="authEmail"||id==="authPass"){ if(AUTH.mode==="login") doAuthLogin(); else if(AUTH.mode==="forgot") doAuthReset(); }
+  else if(id==="authEmail"||id==="authPass"){ if(AUTH.mode==="login") doAuthLogin(); else if(AUTH.mode==="forgot"&&!AUTH.fg) doAuthFgFind(); }
+  else if(id==="authAns"||id==="authNew2"){ if(AUTH.mode==="forgot") doAuthFgReset(); else doAuthRegister(); }
   else if(id==="authPass2") doAuthRegister();
   else if(id==="admEmail"||id==="admName") admInvite();
 }
@@ -4475,11 +4480,10 @@ function createLocalRoom(game,solo){
 /* ================= FIREBASE: accounts, invites, admin view =================
    Keys live in firebase-config.js. Without them the hub runs exactly as before (no login).
    - Only e-mails the admin has invited (invites/{email}) can register; the rules in firestore.rules enforce it, the app also checks first.
-   - New accounts must verify their e-mail (stops someone grabbing an invited address).
+   - No e-mail verification (the addresses are only game IDs). Forgotten passwords are reset with a security question instead of an e-mail link.
    - Each signed-in player records their own logins, games and play time under users/{uid}; the admin reads everything.
    - Removing an account deletes the profile + activity and marks the invite "removed"; the old sign-in record is deleted at that person's next sign-in. */
 const FBC=(window.GH_FIREBASE&&window.GH_FIREBASE.config)||{};
-const ADMIN_EMAIL=String((window.GH_FIREBASE&&window.GH_FIREBASE.adminEmail)||"admin@gamehubverse.com").toLowerCase();
 const FB_ON=!!(FBC.apiKey&&FBC.projectId&&!/^(YOUR_|PASTE)/i.test(FBC.apiKey));
 const FB_SDK="https://www.gstatic.com/firebasejs/10.12.2/firebase-";
 const AUTH={on:FB_ON,state:FB_ON?"loading":"off",user:null,profile:null,isAdmin:false,err:null,info:null,busy:false,mode:"login",pendingName:"",
@@ -4524,20 +4528,17 @@ async function fbReject(u,why){
 }
 async function fbOnUser(u){
   if(!u){ fbStop(); AUTH.user=null; AUTH.profile=null; AUTH.isAdmin=false; AUTH.state="out"; AUTH.busy=false; render(); return; }
-  AUTH.user=u; AUTH.isAdmin=(u.email||"").toLowerCase()===ADMIN_EMAIL;
-  if(!u.emailVerified){ AUTH.state="verify"; AUTH.busy=false; render(); return; }
+  AUTH.user=u; AUTH.isAdmin=false;
   AUTH.state="loading"; render();
   try{
     const email=u.email.toLowerCase(), ref=FBD.collection("users").doc(u.uid), tag="gh_login_"+u.uid;
     let snap=await ref.get(), first=false;
     if(!snap.exists){
-      if(!AUTH.isAdmin){
-        const is=await FBD.collection("invites").doc(email).get(), inv=is.exists?is.data():null;
-        if(!inv||inv.status!=="invited") return fbReject(u,inv&&inv.status);
-      }
+      const is=await FBD.collection("invites").doc(email).get(), inv=is.exists?is.data():null;
+      if(!inv||inv.status!=="invited") return fbReject(u,inv&&inv.status);
       const name=String(AUTH.pendingName||u.displayName||email.split("@")[0]).slice(0,30);
-      await ref.set({email,name,role:AUTH.isAdmin?"admin":"user",createdAt:fbNow(),lastLoginAt:fbNow(),lastSeen:fbNow(),online:true,loginCount:1,device:fbDevice(),stats:{},gamesPlayed:0,totalSeconds:0});
-      if(!AUTH.isAdmin) await FBD.collection("invites").doc(email).update({status:"registered",uid:u.uid,registeredAt:fbNow(),name});
+      await ref.set({email,name,role:"user",createdAt:fbNow(),lastLoginAt:fbNow(),lastSeen:fbNow(),online:true,loginCount:1,device:fbDevice(),stats:{},gamesPlayed:0,totalSeconds:0});
+      await FBD.collection("invites").doc(email).update({status:"registered",uid:u.uid,registeredAt:fbNow(),name});
       first=true; try{ sessionStorage.setItem(tag,"1"); }catch(e){}
       fbLogTo(u.uid,"login",{first:true,device:fbDevice()});
     } else {
@@ -4549,6 +4550,7 @@ async function fbOnUser(u){
       } else ref.update({lastSeen:fbNow(),online:true}).catch(()=>{});
     }
     snap=await ref.get(); AUTH.profile=snap.data()||{name:u.displayName||email,email};
+    AUTH.isAdmin=AUTH.profile.role==="admin";                        // admin = role "admin" on the profile (users/<uid>.role), like any other role
     AUTH.err=null; AUTH.state="in"; AUTH.pendingName="";
     if(S&&!S.me.name){ S.me.name=String(AUTH.profile.name||"").slice(0,16); try{ if(!localStorage.getItem("ngg_me")) localStorage.setItem("ngg_me",JSON.stringify({name:S.me.name,av:S.me.av})); }catch(e){} }
     fbStart(u,ref);
@@ -4562,7 +4564,7 @@ function fbStart(u,ref){
   fbStop();
   AUTH.unSelf=ref.onSnapshot(s=>{
     if(!s.exists&&AUTH.state==="in"&&!AUTH.isAdmin&&!s.metadata.fromCache){ AUTH.err="Your account was removed by the admin."; u.delete().catch(()=>{}); FBA.signOut().catch(()=>{}); }
-    else if(s.exists) AUTH.profile=s.data();
+    else if(s.exists){ AUTH.profile=s.data(); const a=AUTH.profile.role==="admin"; if(a!==AUTH.isAdmin){ AUTH.isAdmin=a; render(); } }
   },()=>{});
   AUTH.hb=setInterval(()=>{ if(document.visibilityState==="visible") ref.update({lastSeen:fbNow(),online:true}).catch(()=>{}); },60000);
 }
@@ -4579,33 +4581,74 @@ async function doAuthLogin(){
   try{ await FBA.signInWithEmailAndPassword(email,pass); }catch(e){ AUTH.err=fbErrText(e); AUTH.busy=false; render(); }
 }
 async function doAuthRegister(){
-  const name=authVal("authName").slice(0,30), email=authVal("authEmail").toLowerCase(), p1=String(S.ui.authPass||""), p2=String(S.ui.authPass2||"");
+  const name=authVal("authName").slice(0,30), email=authVal("authEmail").toLowerCase(), p1=String(S.ui.authPass||""), p2=String(S.ui.authPass2||""), q=String(S.ui.authQ||RC_QS[0]), ans=String(S.ui.authAns||"");
   if(!name||!email||!p1) { AUTH.err="Fill in your name, e-mail and a password."; return render(); }
+  if(ans.trim().length<3){ AUTH.err="Choose a recovery answer of at least 3 characters – it lets you reset your password."; return render(); }
   if(p1!==p2){ AUTH.err="The two passwords don't match."; return render(); }
   AUTH.busy=true; AUTH.err=null; AUTH.info=null; render();
   try{
-    if(email!==ADMIN_EMAIL){
-      const d=await FBD.collection("invites").doc(email).get();
-      if(!d.exists||d.data().status!=="invited"){ AUTH.err="This e-mail hasn't been invited. Ask the admin to invite you first."; AUTH.busy=false; return render(); }
-    }
+    const d=await FBD.collection("invites").doc(email).get();
+    if(!d.exists||d.data().status!=="invited"){ AUTH.err="This e-mail hasn't been invited. Ask the admin to invite you first."; AUTH.busy=false; return render(); }
     AUTH.pendingName=name;
     const cred=await FBA.createUserWithEmailAndPassword(email,p1);
-    try{ await cred.user.updateProfile({displayName:name}); await cred.user.sendEmailVerification(); }catch(e){}
+    try{ await cred.user.updateProfile({displayName:name}); }catch(e){}
+    try{ await rcSave(email,q,ans,p1); }catch(e){ console.error(e); }
   }catch(e){ AUTH.err=fbErrText(e); AUTH.busy=false; render(); }
 }
-async function doAuthReset(){
+/* ---- password recovery without e-mail: a security question ----
+   At registration the password is encrypted with a key made from the answer (PBKDF2 -> AES-GCM) and stored in recovery/<email>.
+   "Forgot password": the right answer decrypts it, signs the person in, and the new password replaces it. The answer never leaves the browser. */
+const RC_QS=["The name of my first pet","The city I was born in","My best friend's first name","My favourite food","My childhood nickname","My favourite game in Game Hub"];
+const rcNorm=a=>String(a||"").trim().toLowerCase().replace(/\s+/g," ");
+const rcB64=u=>btoa(String.fromCharCode(...new Uint8Array(u))), rcUn=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function rcKey(answer,salt,iter){
+  const km=await crypto.subtle.importKey("raw",new TextEncoder().encode(rcNorm(answer)),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:iter,hash:"SHA-256"},km,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+}
+async function rcPack(q,answer,pass){
+  const salt=crypto.getRandomValues(new Uint8Array(16)), iv=crypto.getRandomValues(new Uint8Array(12)), iter=250000, key=await rcKey(answer,salt,iter);
+  const ct=await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(pass));
+  return {q,salt:rcB64(salt),iv:rcB64(iv),ct:rcB64(ct),iter,updatedAt:fbNow()};
+}
+async function rcOpen(answer,d){
+  const key=await rcKey(answer,rcUn(d.salt),d.iter||250000);
+  return new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:rcUn(d.iv)},key,rcUn(d.ct)));
+}
+const rcSave=async(email,q,answer,pass)=>FBD.collection("recovery").doc(email).set(await rcPack(q,answer,pass));
+async function doAuthFgFind(){
   const email=authVal("authEmail").toLowerCase(); if(!email){ AUTH.err="Type your e-mail first."; return render(); }
-  try{ await FBA.sendPasswordResetEmail(email); AUTH.err=null; AUTH.info="If that e-mail has an account, a reset link is on its way."; }catch(e){ AUTH.err=fbErrText(e); }
-  render();
+  AUTH.busy=true; AUTH.err=null; AUTH.info=null; render();
+  try{
+    const d=await FBD.collection("recovery").doc(email).get();
+    if(!d.exists) AUTH.err="No recovery question is set for that e-mail. Ask the admin for help.";
+    else AUTH.fg={email,doc:d.data()};
+  }catch(e){ AUTH.err=fbErrText(e); }
+  AUTH.busy=false; render();
 }
-async function doAuthRecheck(){
-  AUTH.busy=true; render();
-  try{ await FBA.currentUser.reload(); await FBA.currentUser.getIdToken(true); }catch(e){}
-  AUTH.busy=false;
-  if(FBA.currentUser&&FBA.currentUser.emailVerified) fbOnUser(FBA.currentUser); else { AUTH.info="Not verified yet – open the link in the e-mail we sent, then press the button again."; render(); }
+async function doAuthFgReset(){
+  const fg=AUTH.fg, ans=String(S.ui.authAns||""), p1=String(S.ui.authNew||""), p2=String(S.ui.authNew2||"");
+  if(!fg) return;
+  if(!ans||!p1){ AUTH.err="Type your answer and a new password."; return render(); }
+  if(p1.length<6){ AUTH.err="Choose a password of at least 6 characters."; return render(); }
+  if(p1!==p2){ AUTH.err="The two passwords don't match."; return render(); }
+  AUTH.busy=true; AUTH.err=null; render();
+  let old=null;
+  try{ old=await rcOpen(ans,fg.doc); }catch(e){ AUTH.err="That answer isn't right."; AUTH.busy=false; return render(); }
+  try{
+    const cred=await FBA.signInWithEmailAndPassword(fg.email,old);
+    await cred.user.updatePassword(p1);
+    await rcSave(fg.email,fg.doc.q,ans,p1);
+    AUTH.info="Password changed – you're signed in.";
+  }catch(e){ AUTH.err=fbErrText(e); AUTH.busy=false; render(); }
 }
-async function doAuthResend(){
-  try{ await FBA.currentUser.sendEmailVerification(); AUTH.info="Verification e-mail sent again."; AUTH.err=null; }catch(e){ AUTH.err=fbErrText(e); }
+async function doRecSave(){
+  const q=String(S.ui.recQ||RC_QS[0]), a=String(S.ui.recA||""), pw=String(S.ui.recPass||"");
+  if(a.trim().length<3) return toast("Choose an answer of at least 3 characters.","err");
+  if(!pw) return toast("Type your current password to confirm.","err");
+  try{
+    await AUTH.user.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(AUTH.user.email,pw));
+    await rcSave(AUTH.user.email.toLowerCase(),q,a,pw); S.ui.recA=""; S.ui.recPass=""; AUTH.my.rec=true; toast("Recovery question saved.","ok");
+  }catch(e){ toast(e&&e.code==="auth/invalid-credential"?"That isn't your current password.":fbErrText(e),"err"); }
   render();
 }
 function doAuthLogout(){
@@ -4662,7 +4705,7 @@ async function admInvite(){
   const cur=AUTH.adm.invites.find(i=>i.id===email);
   if(cur&&cur.status==="registered") return toast("That person already has an account.","err");
   try{
-    await FBD.collection("invites").doc(email).set({email,name,status:"invited",invitedAt:fbNow(),invitedBy:ADMIN_EMAIL});
+    await FBD.collection("invites").doc(email).set({email,name,status:"invited",invitedAt:fbNow(),invitedBy:AUTH.user.email});
     S.ui.admEmail=""; S.ui.admName=""; toast("Invited "+email+". Share the site link so they can register.","ok");
   }catch(e){ toast(fbErrText(e),"err"); }
 }
@@ -4673,13 +4716,18 @@ async function admRemove(email){
       const acts=await FBD.collection("users").doc(u.id).collection("activity").get();
       for(let i=0;i<acts.docs.length;i+=400){ const b=FBD.batch(); acts.docs.slice(i,i+400).forEach(d=>b.delete(d.ref)); await b.commit(); }
       await FBD.collection("users").doc(u.id).delete();
-      await FBD.collection("invites").doc(email).set({email,name:u.name||"",status:"removed",removedAt:fbNow(),invitedBy:ADMIN_EMAIL},{merge:true});
+      await FBD.collection("recovery").doc(email).delete().catch(()=>{});
+      await FBD.collection("invites").doc(email).set({email,name:u.name||"",status:"removed",removedAt:fbNow(),invitedBy:AUTH.user.email},{merge:true});
     } else await FBD.collection("invites").doc(email).delete();
     toast(u?"Account removed – they can't sign in any more.":"Invite revoked.","ok");
   }catch(e){ toast(fbErrText(e),"err"); }
 }
+async function admSetRole(email,role){
+  const u=Object.values(AUTH.adm.users).find(x=>x.email===email); if(!u) return;
+  try{ await FBD.collection("users").doc(u.id).update({role}); toast(role==="admin"?"They are an admin now.":"Admin role removed.","ok"); }catch(e){ toast(fbErrText(e),"err"); }
+}
 async function admReinvite(email){
-  try{ await FBD.collection("invites").doc(email).set({email,status:"invited",invitedAt:fbNow(),invitedBy:ADMIN_EMAIL},{merge:true}); toast("Invited again.","ok"); }catch(e){ toast(fbErrText(e),"err"); }
+  try{ await FBD.collection("invites").doc(email).set({email,status:"invited",invitedAt:fbNow(),invitedBy:AUTH.user.email},{merge:true}); toast("Invited again.","ok"); }catch(e){ toast(fbErrText(e),"err"); }
 }
 async function admMail(email){
   const c=xmCfg(); if(!c.service) return toast("E-mail sending isn't set up (the e-mail draws use EmailJS) – use Copy link instead.","err");
@@ -4708,14 +4756,14 @@ function authHTML(){
   const msg=(A.err?`<div class="msg err">${esc(A.err)}</div>`:"")+(A.info?`<div class="msg info">${esc(A.info)}</div>`:"");
   if(A.state==="loading") return hero+`<div class="card2" style="text-align:center"><h3>🚀 Checking your account…</h3><p class="mut">Connecting to Game Hub</p></div>`;
   if(A.state==="error") return hero+`<div class="card2"><div class="msg err">Couldn't reach the account service. Check your connection and try again.</div><button class="btn block" data-a="authRetry">Try again</button></div>`;
-  if(A.state==="verify") return hero+`<div class="card2"><h3>📧 Verify your e-mail</h3>${msg}<p class="mut">We sent a link to <b>${esc(A.user&&A.user.email||"")}</b>. Open it, then come back and press the button.</p>
-    <button class="btn green block" data-a="authRecheck" ${A.busy?"disabled":""}>I've verified – continue</button>
-    <div class="row" style="margin-top:10px"><button class="btn secondary" data-a="authResend">Send the e-mail again</button><button class="btn secondary" data-a="authLogout">Use another account</button></div></div>`;
   const m=A.mode, inp=(id,label,type,ph,extra)=>`<label>${label}</label><input type="${type}" id="${id}" data-keep autocomplete="${extra||"off"}" placeholder="${ph||""}" value="${esc(S.ui[id]||"")}">`;
   let f="";
-  if(m==="register") f=`<div class="msg info">Only e-mails the admin has invited can register. After registering you'll get a verification e-mail.</div>${inp("authName","Your name","text","Name shown in games","name")}${inp("authEmail","Invited e-mail","email","you@example.com","email")}${inp("authPass","Choose a password","password","At least 6 characters","new-password")}${inp("authPass2","Repeat the password","password","","new-password")}
+  if(m==="register") f=`<div class="msg info">Only e-mails the admin has invited can register.</div>${inp("authName","Your name","text","Name shown in games","name")}${inp("authEmail","Invited e-mail","email","you@example.com","email")}${inp("authPass","Choose a password","password","At least 6 characters","new-password")}${inp("authPass2","Repeat the password","password","","new-password")}
+    <label>Recovery question (lets you reset a forgotten password)</label><select id="authQ" data-keep>${RC_QS.map(q=>`<option ${(S.ui.authQ||RC_QS[0])===q?"selected":""}>${esc(q)}</option>`).join("")}</select>${inp("authAns","Your answer","text","Remember it – it isn't recoverable","off")}
     <button class="btn green block" style="margin-top:12px" data-a="authRegister" ${A.busy?"disabled":""}>Create account</button>`;
-  else if(m==="forgot") f=`${inp("authEmail","E-mail","email","you@example.com","email")}<button class="btn block" style="margin-top:12px" data-a="authReset">Send reset link</button>`;
+  else if(m==="forgot"&&A.fg) f=`<div class="msg info">Recovery question for <b>${esc(A.fg.email)}</b>:<br><b>${esc(A.fg.doc.q)}</b></div>${inp("authAns","Your answer","text","","off")}${inp("authNew","New password","password","At least 6 characters","new-password")}${inp("authNew2","Repeat the new password","password","","new-password")}
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="btn green" data-a="authFgReset" ${A.busy?"disabled":""}>Change password</button><button class="btn secondary" data-a="authFgBack">Back</button></div>`;
+  else if(m==="forgot") f=`<p class="mut" style="margin:0 0 6px">Type your e-mail and answer your recovery question to choose a new password.</p>${inp("authEmail","E-mail","email","you@example.com","email")}<button class="btn block" style="margin-top:12px" data-a="authFgFind" ${A.busy?"disabled":""}>Continue</button>`;
   else f=`${inp("authEmail","E-mail","email","you@example.com","email")}${inp("authPass","Password","password","","current-password")}
     <button class="btn green block" style="margin-top:12px" data-a="authLogin" ${A.busy?"disabled":""}>Sign in</button>`;
   const tab=(k,l)=>`<button class="btn ${m===k?"":"secondary"}" data-a="authMode" data-mode="${k}">${l}</button>`;
@@ -4740,11 +4788,19 @@ function actListHTML(list){
   if(!list||!list.length) return `<p class="mut">No activity yet.</p>`;
   return `<ul class="adm-act">${list.map(a=>`<li><span class="mut">${fbDate(fbMs(a.at))}</span> ${a.type==="login"?`🔑 Signed in${a.first?" (first time)":""}${a.device?` <span class="mut">· ${esc(a.device)}</span>`:""}`:`🎮 ${esc(gameLabel(a.game))} · ${a.role==="host"?"hosted":"joined"} · ${a.players||1} player${a.players===1?"":"s"} · ${fbDur(a.durationSec)} · ${a.completed?(a.won?"🏆 won":"finished")+(a.score?` · ${a.score} pts`:""):"left early"}`}</li>`).join("")}</ul>`;
 }
+function recoveryCardHTML(){
+  const set=AUTH.my.rec;
+  return `<div class="card2" style="margin-top:18px"><h3 style="margin-top:0">🔐 Password recovery</h3><p class="mut" style="margin:0 0 8px">${set?"A recovery question is set. You can change it here.":"No recovery question yet – without one you can't reset a forgotten password."}</p>
+    <label>Question</label><select id="recQ" data-keep>${RC_QS.map(q=>`<option ${(S.ui.recQ||RC_QS[0])===q?"selected":""}>${esc(q)}</option>`).join("")}</select>
+    <label>Answer</label><input type="text" id="recA" data-keep autocomplete="off" value="${esc(S.ui.recA||"")}">
+    <label>Your current password (to confirm)</label><input type="password" id="recPass" data-keep autocomplete="current-password" value="${esc(S.ui.recPass||"")}">
+    <button class="btn green" style="margin-top:10px" data-a="recSave">Save recovery question</button></div>`;
+}
 function myStatsHTML(){
   const p=AUTH.profile||{};
   const card=(k,v)=>`<div class="adm-card"><b>${v}</b><span>${k}</span></div>`;
   return `<div class="adm-cards">${card("Games played",p.gamesPlayed||0)}${card("Play time",fbDur(p.totalSeconds))}${card("Sign-ins",p.loginCount||0)}${card("Last sign-in",fbAgo(fbMs(p.lastLoginAt)))}</div>
-    <h3>Per game</h3>${statsTableHTML(p.stats)}<h3 style="margin-top:18px">Recent activity</h3>${actListHTML(AUTH.my.act)}`;
+    <h3>Per game</h3>${statsTableHTML(p.stats)}<h3 style="margin-top:18px">Recent activity</h3>${actListHTML(AUTH.my.act)}${recoveryCardHTML()}`;
 }
 function adminHTML(){
   const A=AUTH.adm, rows=admRows(), all=Object.values(A.users), now=Date.now();
@@ -4762,10 +4818,11 @@ function adminHTML(){
   if(!rows.length) h+=`<p class="mut">Nobody yet – invite someone above.</p>`;
   else h+=`<div class="adm-tw"><table class="adm-t"><thead><tr><th>Person</th><th>Status</th><th>Last sign-in</th><th>Sign-ins</th><th>Seen</th><th>Games</th><th>Play time</th><th>Device</th><th></th></tr></thead><tbody>`+rows.map(r=>{
     const u=r.u, open=A.open===r.email, st=r.status==="active"?(fbOnline(u)?`<span class="adm-pill on">● online</span>`:`<span class="adm-pill ok">active</span>`):r.status==="invited"?`<span class="adm-pill wait">invited</span>`:`<span class="adm-pill off">removed</span>`;
-    const acts=r.admin?`<span class="mut">admin</span>`:r.status==="active"?`<button class="btn danger" data-a="admRemove" data-key="${esc(r.email)}">🗑 Remove</button>`
+    const isAdm=!!(u&&u.role==="admin"), me=u&&AUTH.user&&u.id===AUTH.user.uid;
+    const acts=isAdm?(me?`<span class="mut">you (admin)</span>`:`<button class="btn secondary" data-a="admRole" data-key="${esc(r.email)}" data-role="user">Remove admin role</button>`):r.status==="active"?`<button class="btn secondary" data-a="admRole" data-key="${esc(r.email)}" data-role="admin">⭐ Make admin</button> <button class="btn danger" data-a="admRemove" data-key="${esc(r.email)}">🗑 Remove</button>`
       :r.status==="invited"?`<button class="btn secondary" data-a="admCopy" data-key="${esc(r.email)}">🔗 Link</button> <button class="btn secondary" data-a="admMail" data-key="${esc(r.email)}">✉</button> <button class="btn danger" data-a="admRemove" data-key="${esc(r.email)}">Revoke</button>`
       :`<button class="btn secondary" data-a="admReinvite" data-key="${esc(r.email)}">↩ Re-invite</button>`;
-    let row=`<tr class="${r.status}"><td><button class="adm-name" data-a="admToggle" data-key="${esc(r.email)}" ${u?"":"disabled"}>${u?(open?"▾ ":"▸ "):""}<b>${esc(r.name||"–")}</b></button><div class="mut">${esc(r.email)}</div></td><td>${st}</td>
+    let row=`<tr class="${r.status}"><td><button class="adm-name" data-a="admToggle" data-key="${esc(r.email)}" ${u?"":"disabled"}>${u?(open?"▾ ":"▸ "):""}<b>${esc(r.name||"–")}</b></button>${isAdm?` <span class="adm-pill on">admin</span>`:""}<div class="mut">${esc(r.email)}</div></td><td>${st}</td>
       <td>${u?fbAgo(fbMs(u.lastLoginAt)):"–"}<div class="mut">${u?fbDate(fbMs(u.lastLoginAt)):""}</div></td><td>${u?u.loginCount||0:"–"}</td><td>${u?(fbOnline(u)?"now":fbAgo(fbMs(u.lastSeen))):"–"}</td>
       <td>${u?u.gamesPlayed||0:"–"}${u&&u.lastGame?`<div class="mut">last: ${esc(gameLabel(u.lastGame))}</div>`:""}</td><td>${u?fbDur(u.totalSeconds):"–"}</td><td class="mut">${u?esc(u.device||"–"):"–"}</td><td class="adm-ac">${acts}</td></tr>`;
     if(open&&u) row+=`<tr class="adm-det"><td colspan="9"><div class="mut" style="margin-bottom:6px">Registered ${fbDate(fbMs(u.createdAt))} · ${esc(u.email)}</div><h4>Games</h4>${statsTableHTML(u.stats)}<h4 style="margin-top:12px">Recent activity</h4>${actListHTML(A.act[u.id])}</td></tr>`;
