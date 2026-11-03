@@ -354,6 +354,22 @@
   .chip.warn{border-color:var(--warn);color:var(--warn)}
   .kick{border:1px solid var(--err);background:transparent;color:var(--err);border-radius:50%;width:20px;height:20px;line-height:16px;font-size:.8rem;padding:0;margin-left:6px;cursor:pointer;vertical-align:middle}
   .kick:hover{background:var(--err);color:#fff}
+  /* voice chat dock (lives outside #app so re-renders never touch audio) */
+  #voice{position:fixed;right:12px;bottom:12px;z-index:70;max-width:calc(100vw - 24px)}
+  .vc-fab{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px #0008}
+  .vc-fab.live{border-color:var(--accent2);box-shadow:0 0 0 2px #46d6a455,0 6px 20px #0008}
+  .vc-panel{width:min(340px,calc(100vw - 24px));background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px;box-shadow:0 10px 30px #000a}
+  .vc-panel h4{margin:0 0 8px;display:flex;justify-content:space-between;align-items:center}
+  .vc-panel .btn{padding:8px 12px;font-size:.9rem}
+  .vc-note{font-size:.8rem;color:var(--muted);margin:6px 0 10px}
+  .vc-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:10px;border:2px solid transparent;margin:3px 0;background:var(--panel2)}
+  .vc-row.speak{border-color:var(--accent2);box-shadow:0 0 10px #46d6a488}
+  .vc-row .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .vc-row button{border:1px solid var(--border);background:transparent;color:var(--text);border-radius:8px;cursor:pointer;padding:2px 8px}
+  .vc-ctl{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center}
+  .vc-ctl select{width:auto;padding:6px 8px}
+  .vc-ctl input[type=range]{flex:1;min-width:90px}
+  .btn.ptt.hold{background:var(--accent2);color:#0b2a20}
   /* astronaut with a flag: pops up and down in the bottom-left corner while it is your turn */
   .ch-buddy{position:fixed;left:6px;bottom:0;z-index:60;width:290px;height:190px;overflow:hidden;pointer-events:none}
   .ch-buddy-in{position:absolute;inset:0;animation:chPop 1.7s ease-in-out infinite}
@@ -740,6 +756,7 @@
 
 <div id="app"></div>
 <div id="overlay"></div>
+<div id="voice"></div><div id="voiceAud" hidden></div>
 <div id="eject"></div>
 <div id="sys"><div class="sys-page sys-loading" role="status" aria-live="polite" aria-busy="true"><div class="sys-stars"></div><div class="sys-card">
   <div class="sys-art"><div class="ld-planet"></div><div class="ld-orbit"><svg class="ld-rocket" viewBox="0 0 40 80" aria-hidden="true"><g class="flame"><path d="M14 56 L26 56 L20 78Z" fill="#ffb84d"/><path d="M17 56 L23 56 L20 68Z" fill="#fff3c4"/></g><path d="M20 4 C30 14 31 36 28 56 H12 C9 36 10 14 20 4Z" fill="#f4f6fb"/><path d="M20 4 C24 8 27 13 28 20 H12 C13 13 16 8 20 4Z" fill="#ff6b81"/><circle cx="20" cy="31" r="5" fill="#2b3358" stroke="#9aa3c7" stroke-width="2"/><path d="M12 42 L3 58 L12 54Z M28 42 L37 58 L28 54Z" fill="#ff6b81"/></svg></div></div>
@@ -973,6 +990,8 @@ function setRoom(v,off){
     }
   }
   render();
+  try{ voiceSync(); }catch(e){ console.error(e); }
+  try{ if(v.game==="ludo") luSfx(v); }catch(e){ console.error(e); }
 }
 
 /* ---- connection settings: extra STUN servers + optional TURN relay (helps on mobile data / strict networks) ---- */
@@ -1112,12 +1131,13 @@ function hostOnClose(conn){
   if(conn._watch){ if(NET.watchers[conn.peer]===conn) delete NET.watchers[conn.peer]; return; }
   const R=NET.R, pid=conn._pid; if(!R||!pid||NET.conns[pid]!==conn) return;
   if(R.phase==="lobby"){ removePlayer(R,pid); return; }
-  const p=R.players.find(x=>x.pid===pid); if(p){ p.connected=false; p.offAt=Date.now(); pushState(); }
+  const p=R.players.find(x=>x.pid===pid); if(p){ p.connected=false; p.offAt=Date.now(); if(R.voice) delete R.voice.st[pid]; pushState(); }
 }
 function removePlayer(R,pid){
   const i=R.players.findIndex(p=>p.pid===pid); if(i<0||pid===R.hostPid) return;
   if(R.phase==="lobby") R.players.splice(i,1);
   else { R.players[i].left=true; R.players[i].connected=false; }
+  if(R.voice){ delete R.voice.st[pid]; delete R.voice.hm[pid]; }
   const c=NET.conns[pid]; delete NET.conns[pid];
   if(c){ c._pid=null; setTimeout(()=>{ try{ c.close(); }catch(e){} },150); }
   if(R.phase==="play") afterLeave(R,pid);
@@ -1141,6 +1161,7 @@ function viewFor(R,pid){
     now:Date.now(), ev:R.ev||null, deal:R.deal||0, code:R.code, game:R.game, phase:R.phase, hostPid:R.hostPid, me:pid,
     round:R.round, settings:R.settings, msg:R.msg, scores:R.scores, base:R.base||{}, hist:R.hist||[],
     players:R.players.map(p=>({pid:p.pid,name:p.name,av:p.av,connected:p.connected,left:p.left})),
+    voice:voiceView(R),
     g:R.g?gameView(R,pid):null
   };
 }
@@ -1210,6 +1231,7 @@ function doAct(R,pid,m){
   switch(m.a){
     case "settings": if(host&&R.phase==="lobby") setSetting(R,m.k,m.v); return;
     case "kick": if(host) kickPlayer(R,String(m.pid||"")); return;
+    case "voice": voiceAct(R,pid,m); return;
     case "start": if(host&&R.phase==="lobby") startGame(R,m); return;
     case "newgame":
       // Same room, same settings, straight into a fresh game. Scores keep adding up; the finished game is logged in R.hist.
@@ -2692,6 +2714,7 @@ function leaveRoom(force){
 }
 function cleanup(notice){
   clearInterval(NET.timer);
+  try{ voiceStop(true); }catch(e){}
   const wasSpec=NET.spec;
   try{ Object.values(NET.conns).concat(Object.values(NET.watchers)).forEach(c=>c.close()); }catch(e){}
   try{ NET.hostConn&&NET.hostConn.close(); }catch(e){}
@@ -2701,12 +2724,240 @@ function cleanup(notice){
   S=freshState(); if(notice) S.notice=notice;
   if(wasSpec&&AUTH.isAdmin) S.screen="admin";            // a watching admin goes back to the people list
   try{ fbSetLive(null); }catch(e){}
-  padClear(); render();
+  padClear(); render(); try{ voiceDock(); }catch(e){}
 }
 function copyLink(){
   const u=location.origin+location.pathname+"?room="+NET.code;
   if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(()=>toast("Invite link copied!","ok"),()=>toast(u,"info"));
   else toast(u,"info");
+}
+
+/* ================= VOICE CHAT (group call, WebRTC mesh over PeerJS media calls) =================
+   Security model
+   - Mic is never opened until the player taps "Join voice" (user gesture, https only) and stays OFF until they turn it on.
+   - Audio goes straight between players (DTLS-SRTP encrypted). It never touches Firebase or any server of ours and is never recorded.
+   - The host is the authority: it publishes the roster of who is in voice (peer ids read from the real connection, never
+     taken from a client's message). A player only answers calls from peer ids on that roster, so strangers cannot be heard.
+     Admin watchers are never on the roster.
+   - The host can mute anyone or switch voice off for the room; every browser enforces it on the receiving side too. */
+function voiceView(R){
+  const V=R.voice||{on:true,st:{},hm:{}}, ids={}, mic={};
+  if(V.on) R.players.forEach(p=>{ const s=V.st[p.pid]; if(s&&!p.left&&p.connected){ ids[p.pid]=s.peer; mic[p.pid]=s.mic?1:0; } });
+  return {on:V.on, ids, mic, hm:Object.keys(V.hm).filter(k=>V.hm[k]&&ids[k])};
+}
+function voiceAct(R,pid,m){
+  const V=R.voice||(R.voice={on:true,st:{},hm:{}}), host=pid===R.hostPid, v=m&&m.v;
+  if(v==="join"){
+    if(!V.on||isLeft(R,pid)) return;
+    const peer=host?(NET.peer&&NET.peer.id):(NET.conns[pid]&&NET.conns[pid].peer);   // authenticated id of the connection
+    if(peer) V.st[pid]={peer,mic:false};
+  }
+  else if(v==="leave") delete V.st[pid];
+  else if(v==="mic"){ const s=V.st[pid]; if(s) s.mic=!!m.on&&!V.hm[pid]; }
+  else if(v==="mute"&&host){
+    const t=String(m.pid||""); if(t===R.hostPid||!V.st[t]) return;
+    V.hm[t]=!!m.on; if(m.on) V.st[t].mic=false;
+  }
+  else if(v==="room"&&host){ V.on=!!m.on; if(!V.on){ V.st={}; V.hm={}; } }
+}
+
+const VC={on:false,starting:false,stream:null,calls:{},aud:{},pend:{},an:{},ctx:null,mode:"open",mic:false,ptt:false,deaf:false,vol:1,open:false,key:"",tm:null,lv:null,joinAt:0};
+const voiceOK=()=>window.isSecureContext&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.RTCPeerConnection;
+const voiceShown=()=>S&&S.screen==="room"&&S.room&&S.room.voice&&NET.role&&!NET.local&&!NET.spec&&NET.peer;
+const voicePidOf=peerId=>{ const o=S.room.voice.ids; return Object.keys(o).find(k=>k!==S.room.me&&o[k]===peerId)||null; };
+
+async function voiceJoin(){
+  const v=S.room; if(!v||VC.on||VC.starting||!v.voice.on) return;
+  if(!voiceOK()){ toast("Voice chat needs a secure (https) page and a browser with microphone support.","err"); return; }
+  VC.starting=true; voiceDock();
+  try{
+    const st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});
+    if(!voiceShown()||!S.room.voice.on){ st.getTracks().forEach(t=>t.stop()); throw "gone"; }
+    VC.stream=st; VC.on=true; VC.mic=false; VC.ptt=false; VC.deaf=false;
+    st.getAudioTracks().forEach(t=>{ t.enabled=false; });                               // muted until the player says otherwise
+    try{ VC.ctx=new (window.AudioContext||window.webkitAudioContext)(); VC.ctx.resume(); }catch(e){ VC.ctx=null; }
+    voiceWatch("me",st);
+    NET.peer.on("call",voiceIncoming);
+    clearInterval(VC.tm); VC.tm=setInterval(voiceReconcile,4000);
+    clearInterval(VC.lv); VC.lv=setInterval(voiceLevels,150);
+    VC.joinAt=Date.now(); sendAct({a:"voice",v:"join"});
+  }catch(e){
+    if(e!=="gone") toast(e&&e.name==="NotAllowedError"?"Microphone access was blocked. Allow it in your browser's site settings, then try again.":e&&e.name==="NotFoundError"?"No microphone was found on this device.":"Could not start the microphone.","err");
+  }
+  VC.starting=false; VC.key=""; voiceDock();
+}
+function voiceStop(silent){
+  const was=VC.on;
+  clearInterval(VC.tm); clearInterval(VC.lv);
+  try{ NET.peer&&NET.peer.off("call",voiceIncoming); }catch(e){}
+  Object.keys(VC.calls).forEach(k=>voiceDrop(k,VC.calls[k]));
+  Object.values(VC.pend).forEach(c=>{ try{ c.close(); }catch(e){} });
+  Object.keys(VC.an).forEach(k=>voiceUnwatch(k));
+  try{ VC.stream&&VC.stream.getTracks().forEach(t=>t.stop()); }catch(e){}         // releases the microphone
+  try{ VC.ctx&&VC.ctx.close(); }catch(e){}
+  Object.assign(VC,{on:false,starting:false,stream:null,calls:{},aud:{},pend:{},an:{},ctx:null,mic:false,ptt:false,tm:null,lv:null,key:""});
+  const a=$("voiceAud"); if(a) a.innerHTML="";
+  if(was&&!silent) try{ sendAct({a:"voice",v:"leave"}); }catch(e){}
+  voiceDock();
+}
+function voiceIncoming(call){
+  if(!VC.on||!VC.stream||!S.room){ try{ call.close(); }catch(e){} return; }
+  const pid=voicePidOf(call.peer);
+  if(pid) return voiceAnswer(call,pid);
+  VC.pend[call.peer]=call;                                                              // the roster may not have reached us yet: wait briefly, then refuse
+  setTimeout(()=>{ if(VC.pend[call.peer]===call){ delete VC.pend[call.peer]; try{ call.close(); }catch(e){} } },6000);
+}
+function voiceAnswer(call,pid){
+  if(VC.calls[pid]) voiceDrop(pid,VC.calls[pid]);
+  call.answer(VC.stream); voiceWire(call,pid);
+}
+function voiceWire(call,pid){
+  VC.calls[pid]=call;
+  call.on("stream",rs=>{ if(VC.calls[pid]===call) voiceAttach(pid,rs); });
+  call.on("close",()=>voiceDrop(pid,call)); call.on("error",()=>voiceDrop(pid,call));
+  call._t=setTimeout(()=>{ if(!VC.aud[pid]) voiceDrop(pid,call); },15000);              // never connected: the next reconcile retries
+}
+function voiceDrop(pid,call){
+  if(call){ clearTimeout(call._t); try{ call.close(); }catch(e){} }
+  if(VC.calls[pid]!==call) return;
+  delete VC.calls[pid];
+  const a=VC.aud[pid]; if(a){ a.srcObject=null; a.remove(); delete VC.aud[pid]; }
+  voiceUnwatch(pid);
+}
+function voiceAttach(pid,rs){
+  const tracks=rs.getAudioTracks(); if(!tracks.length) return;                          // audio only, ignore anything else
+  const ms=new MediaStream(tracks), a=VC.aud[pid]||document.createElement("audio");
+  a.autoplay=true; a.playsInline=true; a.srcObject=ms; VC.aud[pid]=a;
+  if(!a.parentNode) $("voiceAud").appendChild(a);
+  voiceWatch(pid,ms); voiceVol(); a.play().catch(()=>{});
+}
+function voiceVol(){
+  const vo=S.room&&S.room.voice; if(!vo) return;
+  Object.keys(VC.aud).forEach(pid=>{ const a=VC.aud[pid]; a.volume=VC.vol; a.muted=VC.deaf||vo.hm.includes(pid); });
+}
+function voiceMicApply(){
+  const vo=S.room&&S.room.voice, held=vo&&vo.hm.includes(S.room.me);
+  const live=VC.on&&!held&&(VC.mode==="open"?VC.mic:VC.ptt);
+  if(VC.stream) VC.stream.getAudioTracks().forEach(t=>{ t.enabled=!!live; });
+}
+function voiceAnnounce(){ sendAct({a:"voice",v:"mic",on:VC.mode==="open"?VC.mic:true}); }   // push-to-talk shows as "ready"; each press is not broadcast
+function voiceDial(pid,peerId){
+  let call; try{ call=NET.peer.call(peerId,VC.stream); }catch(e){ return; }
+  if(call) voiceWire(call,pid);
+}
+function voiceReconcile(){
+  if(!VC.on||!voiceShown()) return;
+  const v=S.room, vo=v.voice, me=v.me;
+  Object.keys(VC.calls).forEach(pid=>{ const c=VC.calls[pid]; if(!(pid in vo.ids)||c.peer!==vo.ids[pid]) voiceDrop(pid,c); });
+  Object.keys(vo.ids).forEach(pid=>{
+    if(pid===me||VC.calls[pid]) return;
+    const peerId=vo.ids[pid], waiting=VC.pend[peerId];
+    if(waiting){ delete VC.pend[peerId]; voiceAnswer(waiting,pid); }
+    else if(me<pid) voiceDial(pid,peerId);                                              // the lower id dials, the other waits: never two calls per pair
+  });
+}
+function voiceSync(){
+  if(!voiceShown()){ if(VC.on||VC.stream) voiceStop(true); voiceDock(); return; }
+  const v=S.room, vo=v.voice;
+  if(VC.on){
+    if(!vo.on){ voiceStop(true); toast("The host turned voice chat off.","info"); return; }
+    if(!(v.me in vo.ids)&&Date.now()-VC.joinAt>3000){ VC.joinAt=Date.now(); sendAct({a:"voice",v:"join"}); }   // e.g. after a reconnect
+    if(vo.hm.includes(v.me)&&VC.mic) VC.mic=false;
+    voiceMicApply(); voiceVol(); voiceReconcile();
+  }
+  voiceDock();
+}
+
+/* ---- speaking indicator ---- */
+function voiceWatch(id,stream){
+  if(!VC.ctx) return; voiceUnwatch(id);
+  try{
+    const src=VC.ctx.createMediaStreamSource(stream), an=VC.ctx.createAnalyser(); an.fftSize=256; src.connect(an);
+    VC.an[id]={src,an,buf:new Uint8Array(an.fftSize)};
+  }catch(e){}
+}
+function voiceUnwatch(id){ const w=VC.an[id]; if(w){ try{ w.src.disconnect(); }catch(e){} delete VC.an[id]; } }
+function voiceLevels(){
+  if(!S.room||!S.room.voice||!VC.stream) return;
+  const vo=S.room.voice, me=S.room.me;
+  document.querySelectorAll("#voice [data-vp]").forEach(el=>{
+    const pid=el.dataset.vp, mine=pid===me, w=VC.an[mine?"me":pid]; let on=false;
+    const silenced=mine?!VC.stream.getAudioTracks().some(t=>t.enabled):(VC.deaf||vo.hm.includes(pid));
+    if(w&&!silenced){
+      w.an.getByteTimeDomainData(w.buf); let m=0; for(let i=0;i<w.buf.length;i++) m=Math.max(m,Math.abs(w.buf[i]-128));
+      on=m>9;
+    }
+    el.classList.toggle("speak",on);
+  });
+}
+
+/* ---- dock UI (re-rendered only when something visible changes) ---- */
+function voiceDock(){
+  const root=$("voice"); if(!root) return;
+  if(!voiceShown()){ if(root.innerHTML){ root.innerHTML=""; VC.key=""; } return; }
+  const v=S.room, vo=v.voice, host=v.me===v.hostPid;
+  const inV=v.players.filter(p=>p.pid in vo.ids||(p.pid===v.me&&VC.on));
+  const key=JSON.stringify([VC.open,VC.on,VC.starting,VC.mode,VC.mic,VC.deaf,vo.on,host,vo.ids,vo.mic,vo.hm,inV.map(p=>p.name+p.av)]);
+  if(key===VC.key) return; VC.key=key;
+  const held=vo.hm.includes(v.me);
+  let h;
+  if(!VC.open){
+    h=`<button type="button" class="vc-fab ${VC.on?"live":""}" data-v="toggle" aria-label="Open voice chat">${VC.on?(held?"🔇":(VC.mode==="open"&&VC.mic)?"🎙":"🎧"):"🎙"} Voice${inV.length?` · ${inV.length}`:""}</button>`;
+  } else {
+    h=`<div class="vc-panel" role="region" aria-label="Voice chat"><h4><span>🎙 Voice chat</span><button type="button" class="btn secondary" data-v="toggle" aria-label="Close voice panel">✕</button></h4>`;
+    if(!vo.on) h+=`<div class="msg info" style="margin:6px 0">The host has turned voice chat off for this room.</div>`;
+    if(!VC.on){
+      h+=`<div class="vc-note">Talk with everyone in this room. Audio goes directly between players, encrypted, and is never recorded or stored. Your mic stays off until you switch it on.</div>`;
+      if(!voiceOK()) h+=`<div class="msg warn" style="margin:6px 0">Your browser or this page doesn't allow microphone use (it needs https).</div>`;
+      h+=`<button type="button" class="btn green block" data-v="join" ${vo.on&&voiceOK()&&!VC.starting?"":"disabled"}>${VC.starting?"Starting…":"🎧 Join voice"}</button>`;
+    }
+    if(inV.length) h+=`<div style="margin-top:10px">${inV.map(p=>{
+      const me=p.pid===v.me, hm=vo.hm.includes(p.pid), on=me?(VC.mode==="open"?VC.mic:true):vo.mic[p.pid];
+      return `<div class="vc-row" data-vp="${esc(p.pid)}"><span>${p.av}</span><span class="nm">${esc(p.name)}${me?" (you)":""}</span><span title="${hm?"Muted by host":on?"Mic on":"Mic off"}">${hm?"🛡🔇":on?"🎙":"🔇"}</span>${host&&!me?`<button type="button" data-v="hmute" data-pid="${esc(p.pid)}" title="${hm?"Allow":"Mute"} ${esc(p.name)} for everyone">${hm?"Unmute":"Mute"}</button>`:""}</div>`;
+    }).join("")}</div>`;
+    if(VC.on){
+      h+=`<div class="vc-ctl">`;
+      if(VC.mode==="open") h+=`<button type="button" class="btn ${VC.mic&&!held?"green":"secondary"}" data-v="mic" ${held?"disabled":""}>${held?"🛡 Muted by host":VC.mic?"🎙 Mic on":"🔇 Mic off"}</button>`;
+      else h+=`<button type="button" class="btn ptt secondary" id="vcPtt" ${held?"disabled":""}>${held?"🛡 Muted by host":"🎙 Hold to talk (V)"}</button>`;
+      h+=`<select data-v="mode" aria-label="Mic mode"><option value="open" ${VC.mode==="open"?"selected":""}>Open mic</option><option value="ptt" ${VC.mode==="ptt"?"selected":""}>Push to talk</option></select>
+        <button type="button" class="btn ${VC.deaf?"danger":"secondary"}" data-v="deaf">${VC.deaf?"🔇 Speaker off":"🔊 Speaker on"}</button>
+        <input type="range" min="0" max="1" step="0.05" value="${VC.vol}" data-v="vol" aria-label="Volume">
+        <button type="button" class="btn secondary" data-v="leave">Leave voice</button></div>`;
+    }
+    if(host) h+=`<div class="vc-ctl"><button type="button" class="btn ${vo.on?"secondary":"green"}" data-v="room">${vo.on?"⛔ Turn voice off for room":"✅ Turn voice on for room"}</button></div>`;
+    h+=`</div>`;
+  }
+  root.innerHTML=h;
+}
+function voiceClick(e){
+  const b=e.target.closest("[data-v]"); if(!b||b.tagName==="INPUT"||b.tagName==="SELECT") return;
+  const a=b.dataset.v;
+  if(a==="toggle"){ VC.open=!VC.open; VC.key=""; voiceDock(); }
+  else if(a==="join") voiceJoin();
+  else if(a==="leave") voiceStop();
+  else if(a==="mic"){ VC.mic=!VC.mic; voiceMicApply(); voiceAnnounce(); voiceDock(); }
+  else if(a==="deaf"){ VC.deaf=!VC.deaf; voiceVol(); voiceDock(); }
+  else if(a==="hmute"&&b.dataset.pid) sendAct({a:"voice",v:"mute",pid:b.dataset.pid,on:!S.room.voice.hm.includes(b.dataset.pid)});
+  else if(a==="room") sendAct({a:"voice",v:"room",on:!S.room.voice.on});
+}
+function voiceInput(e){
+  const t=e.target; if(!t.dataset||!t.dataset.v) return;
+  if(t.dataset.v==="vol"){ VC.vol=Math.min(1,Math.max(0,+t.value||0)); voiceVol(); }      // no re-render: keeps the slider draggable
+  else if(t.dataset.v==="mode"&&VC.on&&e.type==="change"){ VC.mode=t.value==="ptt"?"ptt":"open"; VC.ptt=false; voiceMicApply(); voiceAnnounce(); VC.key=""; voiceDock(); }
+}
+function voicePtt(on){
+  if(!VC.on||VC.mode!=="ptt"||VC.ptt===on) return;
+  VC.ptt=on; voiceMicApply(); const b=$("vcPtt"); if(b) b.classList.toggle("hold",on);
+}
+function voiceBind(){
+  const r=$("voice"); if(!r) return;
+  r.addEventListener("click",voiceClick); r.addEventListener("input",voiceInput); r.addEventListener("change",voiceInput);
+  r.addEventListener("pointerdown",e=>{ if(e.target.closest("#vcPtt")){ e.preventDefault(); voicePtt(true); } });
+  ["pointerup","pointercancel","blur"].forEach(ev=>window.addEventListener(ev,()=>voicePtt(false)));
+  const typing=e=>/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)||e.target.isContentEditable;
+  document.addEventListener("keydown",e=>{ if(e.code==="KeyV"&&!e.repeat&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!typing(e)) voicePtt(true); });
+  document.addEventListener("keyup",e=>{ if(e.code==="KeyV") voicePtt(false); });
+  window.addEventListener("pagehide",()=>{ try{ VC.stream&&VC.stream.getTracks().forEach(t=>t.stop()); }catch(e){} });
 }
 
 /* ================= EMAIL GAMES (ChristMom, Diwali) – unchanged ================= */
@@ -3262,17 +3513,18 @@ function dbGameHTML(v){
 }
 
 /* ---- Ludo ---- */
-function luGeo(C){
+function luGeo(C,rot){
+  rot=rot||0;                                                    // the viewer's own yard is turned to the bottom-left
   /* C arms (4 = classic cross, 6 = hexagon of arms). Each arm is 3 lanes wide and 6 squares long, with the end square in the middle.
      Ring square 13*k+j on arm k: j 0-5 = outward along the lane on the counter-clockwise side, 6 = the end square, 7-12 = back inward along the clockwise lane.
      The middle lane is that colour's home column (entered from the end square). Yards sit in the corners between two arms. */
   const f=n=>Math.round(n*10)/10, d0=1.5/Math.tan(Math.PI/C), s=Math.floor(2800/(d0+7.2))/10, d=d0*s, L=13*C;
-  const ang=k=>(-90+k*360/C)*Math.PI/180;
+  const ang=k=>(-90+k*360/C+rot)*Math.PI/180;
   const at=(k,u,v)=>{ const a=ang(k), ux=Math.cos(a), uy=Math.sin(a); return [f(300+u*ux-v*uy),f(300+u*uy+v*ux)]; };
-  const sq=(k,r,v)=>{ const p=at(k,d+(r+.5)*s,v); return [p[0],p[1],-90+k*360/C+90]; };
+  const sq=(k,r,v)=>{ const p=at(k,d+(r+.5)*s,v); return [p[0],p[1],-90+k*360/C+90+rot]; };
   const cell=i=>{ i=((i%L)+L)%L; const k=Math.floor(i/13), j=i%13; return j<=5?sq(k,j,-s):j===6?sq(k,6,0):sq(k,12-j,s); };
   const col=(c,k)=>sq(c,5-k,0);
-  const yard=c=>{ const a=(-90+(c+.5)*360/C)*Math.PI/180, r=(d+(C===4?3:3.5)*s)/Math.cos(Math.PI/C); return [f(300+r*Math.cos(a)),f(300+r*Math.sin(a)),C===4?0:-90+(c+.5)*360/C+90]; };
+  const yard=c=>{ const a=(-90+(c+.5)*360/C+rot)*Math.PI/180, r=(d+(C===4?3:3.5)*s)/Math.cos(Math.PI/C); return [f(300+r*Math.cos(a)),f(300+r*Math.sin(a)),C===4?0:-90+(c+.5)*360/C+90+rot]; };
   const home=(c,t)=>{ const p=sq(c,0,0), a=ang(c); const du=(t<2?-1:1)*.27*s, dv=(t%2?1:-1)*.27*s;
     return [f(p[0]+du*Math.cos(a)-dv*Math.sin(a)),f(p[1]+du*Math.sin(a)+dv*Math.cos(a)),0,.55]; };
   return {C,L,s,d,cr:s*.4,ang,at,cell,col,yard,home};
@@ -3285,6 +3537,41 @@ function luTokXY(G,g,s,p,t){
   return G.home(s.c,t);
 }
 const f1=n=>Math.round(n*10)/10;
+const LU_STEP=.22;                                                  // seconds per square
+const luSteps=l=>l.from===-1?1:Math.max(1,l.to-l.from);
+
+/* Ludo sounds (WebAudio, no files): dice rattle, a wooden "tok" for every square a coin hops, pops, captures and a home chime.
+   Played on every device from the shared state, only for moves that just happened (a reload or rejoin stays silent). */
+const LUS={ctx:null,rid:"",at:0};
+function luAC(){
+  if(EJ.mute) return null;
+  try{ const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return null; const c=LUS.ctx||(LUS.ctx=new AC()); if(c.state==="suspended") c.resume(); return c; }catch(e){ return null; }
+}
+function luTone(c,type,f1,f2,at,d,v){ const o=c.createOscillator(), g=c.createGain(); o.type=type; o.frequency.setValueAtTime(f1,at); if(f2) o.frequency.exponentialRampToValueAtTime(f2,at+d);
+  g.gain.setValueAtTime(.0001,at); g.gain.exponentialRampToValueAtTime(v,at+.008); g.gain.exponentialRampToValueAtTime(.0001,at+d); o.connect(g); g.connect(c.destination); o.start(at); o.stop(at+d+.03); }
+function luNoise(c,at,d,v,freq){ const n=Math.floor(c.sampleRate*d), b=c.createBuffer(1,n,c.sampleRate), a=b.getChannelData(0); for(let k=0;k<n;k++) a[k]=Math.random()*2-1;
+  const s=c.createBufferSource(); s.buffer=b; const f=c.createBiquadFilter(); f.type="bandpass"; f.frequency.value=freq; f.Q.value=1.2;
+  const g=c.createGain(); g.gain.setValueAtTime(v,at); g.gain.exponentialRampToValueAtTime(.0001,at+d); s.connect(f); f.connect(g); g.connect(c.destination); s.start(at); }
+function luDiceSfx(el){
+  const c=luAC(); if(!c) return; const t0=c.currentTime+.02;
+  for(let k=0,t=Math.max(0,-el);k<11;k++){ t+=.035+k*.012; if(t>.8) break;                          // rattle: clacks that spread out as the dice settles
+    luNoise(c,t0+t,.03,.5-k*.03,2400+Math.random()*2200); luTone(c,"triangle",700+Math.random()*500,0,t0+t,.03,.07); }
+  luTone(c,"sine",180,90,t0+.8,.12,.35); luNoise(c,t0+.8,.05,.5,1200);                                // last knock as it lands
+}
+function luStepSfx(c,at,i){ luTone(c,"sine",520+i*28,300+i*14,at,.07,.32); luNoise(c,at,.025,.25,1800); }
+function luSfx(v){
+  const g=v.g; if(!g||g.kind!=="lu") return;
+  const now=Date.now()+S.off, rk=v.code+"|"+v.deal+"|"+g.rid;
+  if(g.rid&&rk!==LUS.rid){ LUS.rid=rk; const el=(now-g.rollAt)/1000; if(el<.8) luDiceSfx(el); }
+  const l=g.last; if(!l||l.at===LUS.at) return; LUS.at=l.at;
+  const el=(now-l.at)/1000, n=luSteps(l); if(el>n*LU_STEP+.5) return;
+  const c=luAC(); if(!c) return; const t0=c.currentTime;
+  for(let i=0;i<n;i++){ const d=i*LU_STEP-el; if(d>=-.05) luStepSfx(c,t0+Math.max(0,d),i); }
+  const end=Math.max(0,n*LU_STEP-el);
+  if(l.from===-1) luTone(c,"sine",300,900,t0+Math.max(0,-el),.12,.3);                                // pops out of the yard
+  if(g.hit&&g.hit.at>=l.at){ luTone(c,"sawtooth",330,70,t0+end,.45,.22); luNoise(c,t0+end,.3,.5,700); }  // capture
+  if(l.to===13*g.C+4) [523,659,784,1047].forEach((f,k)=>luTone(c,"triangle",f,0,t0+end+k*.1,.4,.18));    // home
+}
 /* a movable coin catches fire: three flickering flames that burn gently, so it is clear which coins can be moved */
 const LU_FLAME="M0 0C-.75-.1-.95-.8-.3-1.2C-.3-.8.1-.8 0-1.7C.75-1.1.95-.3.5-.1C.3 0 .1.1 0 0Z";
 function luFire(r){
@@ -3292,7 +3579,7 @@ function luFire(r){
   return `<g pointer-events="none">${fl(-.55,.75,-.15,"#ff7a18")}${fl(.55,.7,-.3,"#ff7a18")}${fl(0,1.05,0,"#ff9d2e")}${fl(0,.62,-.2,"#ffe27a")}</g>`;
 }
 function luBoardHTML(v,mine){
-  const g=v.g, C=g.C, G=luGeo(C), L=G.L, s=G.s, cr=G.cr, now=Date.now()+S.off;
+  const g=v.g, C=g.C, my=g.seats.find(x=>x.pid===v.me&&!x.out), rot=my?(C===4?135:90)-(-90+(my.c+.5)*360/C):0, G=luGeo(C,rot), L=G.L, s=G.s, cr=G.cr, now=Date.now()+S.off;
   const used=c=>g.seats.some(x=>x.c===c);
   const rect=(c,w,h,fill,fo,stroke,extra)=>`<rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="${s*.14}" fill="${fill}" fill-opacity="${fo}" stroke="${stroke}" ${extra||""} transform="translate(${c[0]} ${c[1]}) rotate(${c[2]})"/>`;
   let b="";
@@ -3334,9 +3621,14 @@ function luBoardHTML(v,mine){
   g.seats.forEach((sd,si)=>sd.tok.forEach((p,t)=>{
     const q=luTokXY(G,g,sd,p,t), key=p>=0&&p<=L+3?q[0]+","+q[1]:null;
     let off=0; if(key){ off=(stack[key]=(stack[key]||0)+1)-1; }
-    const x=q[0]+off*3.5, y=q[1]-off*3.5, r=cr*q[3], can=mine&&g.turn===si&&g.movable.includes(t), mv=g.last&&g.last.c===sd.c&&g.last.t===t&&now-g.last.at<600;
+    const x=q[0]+off*3.5, y=q[1]-off*3.5, r=cr*q[3], can=mine&&g.turn===si&&g.movable.includes(t), mv=g.last&&g.last.c===sd.c&&g.last.t===t&&now-g.last.at<luSteps(g.last)*LU_STEP*1000+100;
     let anim="";
-    if(mv){ const a=luTokXY(G,g,sd,g.last.from,t), el=Math.max(0,now-g.last.at)/1000; anim=`<animateTransform attributeName="transform" type="translate" from="${a[0]-q[0]} ${a[1]-q[1]}" to="0 0" dur=".5s" begin="-${el.toFixed(2)}s" fill="freeze"/>`; }
+    if(mv){                                       // hop square by square: a short move, then a pause on each square
+      const n=luSteps(g.last), el=Math.max(0,now-g.last.at)/1000, kt=["0"], vs=[], pt=i=>{ const a=luTokXY(G,g,sd,g.last.from===-1?(i?0:-1):g.last.from+i,t); return f1(a[0]-q[0])+" "+f1(a[1]-q[1]); };
+      vs.push(pt(0));
+      for(let i=1;i<=n;i++){ kt.push(((i-1+.55)/n).toFixed(3),(i/n).toFixed(3)); vs.push(pt(i),pt(i)); }
+      anim=`<animateTransform attributeName="transform" type="translate" values="${vs.join(";")}" keyTimes="${kt.join(";")}" dur="${(n*LU_STEP).toFixed(2)}s" begin="-${el.toFixed(2)}s" fill="freeze"/>`;
+    }
     b+=`<g ${can?`class="lu-can" data-a="ludomove" data-t="${t}"`:""} transform="translate(${x} ${y})"><g>${anim}
       <circle r="${r*1.45}" fill="transparent"/>${can?`<circle class="lu-glow" r="${r*1.9}" fill="url(#luGlow)"/>`:""}<circle class="lu-tk" r="${r}" fill="${LU_COL[sd.c]}" stroke="${can?"#ffb347":"#fff"}" stroke-width="2"/><circle r="${r*.42}" fill="#fff" fill-opacity=".6"/>${can?luFire(r):""}</g></g>`;
   }));
@@ -4917,6 +5209,7 @@ function startApp(){
   const ov=$("overlay");
   ov.addEventListener("click",onOverlayClick);
   $("sys").addEventListener("click",sysClick);
+  voiceBind();
   document.addEventListener("keydown",onOverlayKey);
   if(!ticker) ticker=setInterval(()=>{
     document.querySelectorAll("[data-dl]").forEach(el=>{

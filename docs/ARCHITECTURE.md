@@ -52,6 +52,13 @@ Details of each game's rules are in [README.md](../README.md).
 | host → guest | `kicked` | removed by the host |
 | host → guest | `draw` | relayed Scribblio strokes |
 
+### Voice chat
+Optional group call for everyone in a room (`voice*` functions, floating 🎙 dock). It is a WebRTC mesh using PeerJS media calls, so audio flows directly between players, encrypted (DTLS-SRTP), and never touches Firebase or is recorded.
+- The mic opens only after the player taps **Join voice** (https required) and starts **off**; leaving voice releases the microphone.
+- The host publishes the voice roster (peer ids taken from the real connections, `voiceAct`). Players answer calls only from peers on that roster; admin watchers are never on it.
+- The host can mute any player or turn voice off for the room; receivers enforce it too. Players get open mic or push-to-talk (hold **V**), speaker off, volume and a speaking indicator.
+- The same TURN settings as game data (`iceConfig`) apply to voice.
+
 If players can't connect (strict networks), *Connection help* accepts a TURN relay's credentials (`iceConfig`).
 
 ## 4. Accounts, invites and admin (Firebase)
