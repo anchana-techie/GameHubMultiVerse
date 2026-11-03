@@ -4538,6 +4538,8 @@ function createLocalRoom(game,solo){
 const FBC=(window.GH_FIREBASE&&window.GH_FIREBASE.config)||{};
 const FB_ON=!!(FBC.apiKey&&FBC.projectId&&!/^(YOUR_|PASTE)/i.test(FBC.apiKey));
 const FB_SDK="https://www.gstatic.com/firebasejs/10.12.2/firebase-";
+const MASTER_EMAIL="admin@gamehubverse.com";                  // top of the hierarchy: master > admin > user (keep in sync with firestore.rules)
+const fbIsMaster=()=>!!(AUTH.user&&AUTH.user.email&&AUTH.user.email.toLowerCase()===MASTER_EMAIL);
 const AUTH={on:FB_ON,state:FB_ON?"loading":"off",user:null,profile:null,isAdmin:false,err:null,info:null,busy:false,mode:"login",pendingName:"",
   hb:null,unSelf:null,adm:{invites:[],users:{},open:null,act:{},subs:[],err:null},my:{act:null,loading:false}};
 let FBA=null, FBD=null;
@@ -4788,6 +4790,7 @@ async function admRemove(email){
   }catch(e){ toast(fbErrText(e),"err"); }
 }
 async function admSetRole(email,role){
+  if(!fbIsMaster()) return toast("Only the master admin can change admin roles.","err");
   const u=Object.values(AUTH.adm.users).find(x=>x.email===email); if(!u) return;
   try{ await FBD.collection("users").doc(u.id).update({role}); toast(role==="admin"?"They are an admin now.":"Admin role removed.","ok"); }catch(e){ toast(fbErrText(e),"err"); }
 }
@@ -4839,7 +4842,7 @@ function acctBarHTML(){
   if(AUTH.state==="offline") return `<div class="msg warn">📴 Signed-out offline mode – accounts need an internet connection. The offline games below still work.</div>`;
   if(AUTH.state!=="in") return "";
   const p=AUTH.profile||{};
-  return `<div class="acct-bar"><span class="chip">👤 ${esc(p.name||AUTH.user.email)}${AUTH.isAdmin?" · 🛡 Admin":""}</span>
+  return `<div class="acct-bar"><span class="chip">👤 ${esc(p.name||AUTH.user.email)}${AUTH.isAdmin?(fbIsMaster()?" · 👑 Master admin":" · 🛡 Admin"):""}</span>
     <button class="btn secondary" data-a="goMyStats">📊 My activity</button>${AUTH.isAdmin?`<button class="btn secondary" data-a="goAdmin">🛡 Admin</button>`:""}<button class="btn secondary" data-a="authLogout">Sign out</button></div>`;
 }
 const gameLabel=g=>GTITLE[g]||g;
@@ -4884,13 +4887,13 @@ function adminHTML(){
   if(!rows.length) h+=`<p class="mut">Nobody yet – invite someone above.</p>`;
   else h+=`<div class="adm-tw"><table class="adm-t adm-people"><thead><tr><th>Person</th><th>Status</th><th>Last sign-in</th><th>Sign-ins</th><th>Games</th><th>Device</th><th>Game view</th><th></th></tr></thead><tbody>`+rows.map(r=>{
     const u=r.u, open=A.open===r.email, st=r.status==="active"?(fbOnline(u)?`<span class="adm-pill on">● online</span>`:`<span class="adm-pill ok">active</span>`):r.status==="invited"?`<span class="adm-pill wait">invited</span>`:`<span class="adm-pill off">removed</span>`;
-    const isAdm=!!(u&&u.role==="admin"), me=u&&AUTH.user&&u.id===AUTH.user.uid;
-    const acts=isAdm?(me?`<span class="mut">you (admin)</span>`:`<button class="btn secondary" data-a="admRole" data-key="${esc(r.email)}" data-role="user">Remove admin</button>`):r.status==="active"?`<button class="btn secondary" data-a="admRole" data-key="${esc(r.email)}" data-role="admin">⭐ Make admin</button> <button class="btn danger" data-a="admRemove" data-key="${esc(r.email)}">🗑 Remove</button>`
+    const isAdm=!!(u&&u.role==="admin"), me=u&&AUTH.user&&u.id===AUTH.user.uid, isMst=r.email===MASTER_EMAIL, iAmMst=fbIsMaster();
+    const acts=isAdm?(me?`<span class="mut">you (${iAmMst?"master admin":"admin"})</span>`:isMst||!iAmMst?`<span class="mut">${isMst?"master admin":"admin"}</span>`:`<button class="btn secondary" data-a="admRole" data-key="${esc(r.email)}" data-role="user">Remove admin</button>`):r.status==="active"?(iAmMst?`<button class="btn secondary" data-a="admRole" data-key="${esc(r.email)}" data-role="admin">⭐ Make admin</button> `:"")+`<button class="btn danger" data-a="admRemove" data-key="${esc(r.email)}">🗑 Remove</button>`
       :r.status==="invited"?`<button class="btn secondary" data-a="admCopy" data-key="${esc(r.email)}">🔗 Link</button> <button class="btn secondary" data-a="admMail" data-key="${esc(r.email)}">✉</button> <button class="btn danger" data-a="admRemove" data-key="${esc(r.email)}">Revoke</button>`
       :`<button class="btn secondary" data-a="admReinvite" data-key="${esc(r.email)}">↩ Re-invite</button>`;
     const lr=fbLiveRoom(u);
     const gv=lr?`<span class="adm-pill on">${esc(gameLabel(lr.game))}</span> <span class="mut">${esc(lr.code)} · ${lr.phase==="lobby"?"lobby":lr.phase==="end"?"finished":"playing"}</span> <button class="btn secondary" data-a="admWatch" data-key="${esc(r.email)}">👁 Watch</button>`:`<span class="mut">–</span>`;
-    let row=`<tr class="${r.status}"><td class="wide"><button class="adm-name" data-a="admToggle" data-key="${esc(r.email)}" ${u?"":"disabled"}>${u?(open?"▾ ":"▸ "):""}<b>${esc(r.name||(u?"–":""))}</b></button>${isAdm?` <span class="adm-pill on">admin</span>`:""}<div class="mut">${esc(r.email)}</div></td><td class="wide" ${u?`title="Last seen ${fbAgo(fbMs(u.lastSeen))}"`:""}>${st}</td>
+    let row=`<tr class="${r.status}"><td class="wide"><button class="adm-name" data-a="admToggle" data-key="${esc(r.email)}" ${u?"":"disabled"}>${u?(open?"▾ ":"▸ "):""}<b>${esc(r.name||(u?"–":""))}</b></button>${isAdm?` <span class="adm-pill on">${isMst?"master":"admin"}</span>`:""}<div class="mut">${esc(r.email)}</div></td><td class="wide" ${u?`title="Last seen ${fbAgo(fbMs(u.lastSeen))}"`:""}>${st}</td>
       <td data-l="Last sign-in" ${u?`title="${fbDate(fbMs(u.lastLoginAt))}"`:""}>${u?fbAgo(fbMs(u.lastLoginAt)):"–"}</td><td data-l="Sign-ins">${u?u.loginCount||0:"–"}</td>
       <td data-l="Games" ${u&&u.lastGame?`title="Last played: ${esc(gameLabel(u.lastGame))}"`:""}>${u?(u.gamesPlayed||0)+" · "+fbDur(u.totalSeconds):"–"}</td><td class="mut adm-dev" data-l="Device">${u?esc(u.device||"–"):"–"}</td><td class="wide" data-l="Game view">${gv}</td><td class="adm-ac wide">${acts}</td></tr>`;
     if(open&&u) row+=`<tr class="adm-det"><td colspan="8"><div class="mut" style="margin-bottom:6px">Registered ${fbDate(fbMs(u.createdAt))} · ${esc(u.email)}</div><h4>Games</h4>${statsTableHTML(u.stats)}<h4 style="margin-top:12px">Recent activity</h4>${actListHTML(A.act[u.id])}</td></tr>`;

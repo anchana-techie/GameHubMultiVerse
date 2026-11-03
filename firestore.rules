@@ -1,6 +1,7 @@
 rules_version = '2';
 // Game Hub – publish these in Firebase console > Firestore Database > Rules.
-// Admin = a profile (users/<uid>) whose role field is "admin".
+// Hierarchy: master admin (admin@gamehubverse.com) > admin (role "admin") > user.
+// Only the master can grant/revoke admin or remove an admin; admins manage plain users only.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -8,6 +9,7 @@ service cloud.firestore {
     function mail()     { return request.auth.token.email.lower(); }
     function profile(uid) { return get(/databases/$(database)/documents/users/$(uid)).data; }
     function isAdmin()  { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && profile(request.auth.uid).role == 'admin'; }
+    function isMaster() { return signedIn() && mail() == 'admin@gamehubverse.com'; }
     function inviteOf(e) { return get(/databases/$(database)/documents/invites/$(e)).data; }
 
     // Invites: the admin manages them. Anyone may look up ONE invite by e-mail (needed to check an address before registering).
@@ -26,7 +28,7 @@ service cloud.firestore {
     match /recovery/{email} {
       allow get: if true;
       allow create, update: if signedIn() && email == mail();
-      allow delete: if isAdmin() || (signedIn() && email == mail());
+      allow delete: if isMaster() || (isAdmin() && email != 'admin@gamehubverse.com') || (signedIn() && email == mail());
     }
 
     // Profiles: a person can create their own ONLY if their e-mail is invited (the admin account is the exception).
@@ -36,17 +38,18 @@ service cloud.firestore {
         && request.resource.data.email == mail()
         && request.resource.data.role == 'user'
         && inviteOf(mail()).status == 'invited';
-      allow update: if isAdmin()
+      allow update: if isMaster()
+        || (isAdmin() && request.resource.data.role == resource.data.role)
         || (signedIn() && request.auth.uid == uid
             && request.resource.data.role == resource.data.role
             && request.resource.data.email == resource.data.email);
-      allow delete: if isAdmin();
+      allow delete: if isMaster() || (isAdmin() && resource.data.role != 'admin');
 
       match /activity/{id} {
         allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
         allow create: if signedIn() && request.auth.uid == uid
           && exists(/databases/$(database)/documents/users/$(uid));
-        allow delete: if isAdmin();
+        allow delete: if isMaster() || (isAdmin() && profile(uid).role != 'admin');
       }
     }
   }
