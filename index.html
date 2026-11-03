@@ -616,6 +616,17 @@
   .adm-ac{white-space:nowrap}.adm-ac .btn{padding:4px 8px;font-size:.78rem;margin:0 4px 0 0}
   .adm-dev{font-size:.78rem}
   .adm-t .adm-pill{white-space:nowrap}
+  @media(max-width:700px){
+    .adm-people,.adm-people>tbody{display:block;width:100%}
+    .adm-people>thead{display:none}
+    .adm-people>tbody>tr{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;padding:12px 0;border-bottom:1px solid var(--border)}
+    .adm-people>tbody>tr>td{display:block;border:0;padding:0;min-width:0}
+    .adm-people>tbody>tr>td[data-l]::before{content:attr(data-l);display:block;font-size:.65rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}
+    .adm-people>tbody>tr>td.wide{grid-column:1/-1}
+    .adm-people>tbody>tr>td.adm-ac{display:flex;flex-wrap:wrap;gap:6px}
+    .adm-people>tbody>tr>td.adm-ac .btn{margin:0}
+    .adm-people>tbody>tr.adm-det{display:block}
+  }
   .adm-pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.75rem;font-weight:700;border:1px solid #ffffff33}
   .adm-pill.on{color:#46d6a4;border-color:#46d6a4}.adm-pill.ok{color:#9fd2ff}.adm-pill.wait{color:#ffd25e;border-color:#ffd25e88}.adm-pill.off{color:#ff7b8b}
   .adm-act{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:.85rem}
@@ -4871,7 +4882,7 @@ function adminHTML(){
   h+=`<div class="card2" style="margin-top:14px"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between"><h3 style="margin:0">👥 People (${rows.length})</h3>
     <input type="text" id="admQ" data-keep autocomplete="off" placeholder="Search name or e-mail" style="max-width:260px" value="${esc(S.ui.admQ||"")}"></div>`;
   if(!rows.length) h+=`<p class="mut">Nobody yet – invite someone above.</p>`;
-  else h+=`<div class="adm-tw"><table class="adm-t"><thead><tr><th>Person</th><th>Status</th><th>Last sign-in</th><th>Sign-ins</th><th>Games</th><th>Device</th><th>Game view</th><th></th></tr></thead><tbody>`+rows.map(r=>{
+  else h+=`<div class="adm-tw"><table class="adm-t adm-people"><thead><tr><th>Person</th><th>Status</th><th>Last sign-in</th><th>Sign-ins</th><th>Games</th><th>Device</th><th>Game view</th><th></th></tr></thead><tbody>`+rows.map(r=>{
     const u=r.u, open=A.open===r.email, st=r.status==="active"?(fbOnline(u)?`<span class="adm-pill on">● online</span>`:`<span class="adm-pill ok">active</span>`):r.status==="invited"?`<span class="adm-pill wait">invited</span>`:`<span class="adm-pill off">removed</span>`;
     const isAdm=!!(u&&u.role==="admin"), me=u&&AUTH.user&&u.id===AUTH.user.uid;
     const acts=isAdm?(me?`<span class="mut">you (admin)</span>`:`<button class="btn secondary" data-a="admRole" data-key="${esc(r.email)}" data-role="user">Remove admin</button>`):r.status==="active"?`<button class="btn secondary" data-a="admRole" data-key="${esc(r.email)}" data-role="admin">⭐ Make admin</button> <button class="btn danger" data-a="admRemove" data-key="${esc(r.email)}">🗑 Remove</button>`
@@ -4879,9 +4890,9 @@ function adminHTML(){
       :`<button class="btn secondary" data-a="admReinvite" data-key="${esc(r.email)}">↩ Re-invite</button>`;
     const lr=fbLiveRoom(u);
     const gv=lr?`<span class="adm-pill on">${esc(gameLabel(lr.game))}</span> <span class="mut">${esc(lr.code)} · ${lr.phase==="lobby"?"lobby":lr.phase==="end"?"finished":"playing"}</span> <button class="btn secondary" data-a="admWatch" data-key="${esc(r.email)}">👁 Watch</button>`:`<span class="mut">–</span>`;
-    let row=`<tr class="${r.status}"><td><button class="adm-name" data-a="admToggle" data-key="${esc(r.email)}" ${u?"":"disabled"}>${u?(open?"▾ ":"▸ "):""}<b>${esc(r.name||(u?"–":""))}</b></button>${isAdm?` <span class="adm-pill on">admin</span>`:""}<div class="mut">${esc(r.email)}</div></td><td ${u?`title="Last seen ${fbAgo(fbMs(u.lastSeen))}"`:""}>${st}</td>
-      <td ${u?`title="${fbDate(fbMs(u.lastLoginAt))}"`:""}>${u?fbAgo(fbMs(u.lastLoginAt)):"–"}</td><td>${u?u.loginCount||0:"–"}</td>
-      <td ${u&&u.lastGame?`title="Last played: ${esc(gameLabel(u.lastGame))}"`:""}>${u?(u.gamesPlayed||0)+" · "+fbDur(u.totalSeconds):"–"}</td><td class="mut adm-dev">${u?esc(u.device||"–"):"–"}</td><td>${gv}</td><td class="adm-ac">${acts}</td></tr>`;
+    let row=`<tr class="${r.status}"><td class="wide"><button class="adm-name" data-a="admToggle" data-key="${esc(r.email)}" ${u?"":"disabled"}>${u?(open?"▾ ":"▸ "):""}<b>${esc(r.name||(u?"–":""))}</b></button>${isAdm?` <span class="adm-pill on">admin</span>`:""}<div class="mut">${esc(r.email)}</div></td><td class="wide" ${u?`title="Last seen ${fbAgo(fbMs(u.lastSeen))}"`:""}>${st}</td>
+      <td data-l="Last sign-in" ${u?`title="${fbDate(fbMs(u.lastLoginAt))}"`:""}>${u?fbAgo(fbMs(u.lastLoginAt)):"–"}</td><td data-l="Sign-ins">${u?u.loginCount||0:"–"}</td>
+      <td data-l="Games" ${u&&u.lastGame?`title="Last played: ${esc(gameLabel(u.lastGame))}"`:""}>${u?(u.gamesPlayed||0)+" · "+fbDur(u.totalSeconds):"–"}</td><td class="mut adm-dev" data-l="Device">${u?esc(u.device||"–"):"–"}</td><td class="wide" data-l="Game view">${gv}</td><td class="adm-ac wide">${acts}</td></tr>`;
     if(open&&u) row+=`<tr class="adm-det"><td colspan="8"><div class="mut" style="margin-bottom:6px">Registered ${fbDate(fbMs(u.createdAt))} · ${esc(u.email)}</div><h4>Games</h4>${statsTableHTML(u.stats)}<h4 style="margin-top:12px">Recent activity</h4>${actListHTML(A.act[u.id])}</td></tr>`;
     return row;
   }).join("")+`</tbody></table></div>`;
