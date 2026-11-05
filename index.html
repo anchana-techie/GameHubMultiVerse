@@ -629,7 +629,7 @@
   .gm-opt:hover{background:#6c74ff;color:#fff}
   .gm-clr{color:#9aa0c8;border-bottom:1px solid #ffffff14;border-radius:9px 9px 0 0;margin-bottom:4px}
   .gm-none{padding:10px 12px;font-size:.8rem;color:#9aa0c8}
-  .dr-gs{display:flex;gap:8px;flex-wrap:wrap}.dr-gs label{display:flex;gap:4px;align-items:center;margin:0;font-size:.78rem;white-space:nowrap}
+  .dr-gs{display:flex;gap:8px;flex-wrap:wrap}.dr-t .dr-gs{flex-wrap:nowrap;white-space:nowrap}.dr-t td{height:46px}.dr-gs label{display:flex;gap:4px;align-items:center;margin:0;font-size:.78rem;white-space:nowrap}
   .adm-tw{margin-top:10px}
   .adm-det .adm-tw{overflow-x:auto}
   .adm-t{width:100%;border-collapse:collapse;font-size:.84rem;table-layout:auto}
@@ -3161,7 +3161,8 @@ function dwHTML(){
      drawGroups/{groupId}/members/{gmail}  { name, gmail, gameMail, groups:[...] }   – the people of a group
      gameMailGroups/{gameMail}             { groups:[...] }                          – which groups a login belongs to
    A user can read only the groups listed under their own login e-mail (firestore.rules); the master manages everything. */
-const DREG={groups:[],loaded:false,sel:null,members:[],busy:false,err:null};
+const DREG={groups:[],loaded:false,sel:null,members:[],busy:false,err:null,edit:false};
+function drawEditOff(){ DREG.edit=false; Object.keys(S.ui).filter(k=>/^p[ngm]\d+$/.test(k)).forEach(k=>delete S.ui[k]); }
 const myGroupIds=()=>fbIsMaster()?DREG.groups:(AUTH.groups||[]);
 const gidOk=g=>/^[A-Za-z0-9][A-Za-z0-9 _-]{0,29}$/.test(g);
 const mailOk=e=>EMAIL_RE.test(e)&&!e.includes("/");
@@ -3257,10 +3258,10 @@ async function drawRegSaveAll(){                   // one button saves every row
     const was=(c.groups||[DREG.sel]).slice().sort().join("|");
     if(r.p.name!==(c.name||"")||r.p.gmail!==pGmail(c)||r.p.gameMail!==(c.gameMail||"").toLowerCase()||groups.join("|")!==was) jobs.push([c,r.p,groups]);
   }
-  if(!jobs.length) return toast("Nothing changed.","info");
+  if(!jobs.length){ drawEditOff(); render(); return toast("Nothing changed.","info"); }
   try{
     for(const j of jobs) await drawPersonWrite(j[0],j[1],j[2]);
-    Object.keys(S.ui).filter(k=>/^p[ngm]\d+$/.test(k)).forEach(k=>delete S.ui[k]);
+    drawEditOff();
     toast("Saved "+jobs.length+" change"+(jobs.length===1?"":"s")+".","ok"); await drawRegLoad();
   }catch(e){ toast(fbErrText(e),"err"); }
 }
@@ -3323,10 +3324,12 @@ function drawRegHTML(){
   // ---- right: registered people table ----
   if(DREG.groups.length){
     h+=`<div class="card2"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0">👥 ${esc(DREG.sel||"")} (${DREG.members.length})${DREG.busy?" – loading…":""}</h3>
-      <div style="display:flex;gap:8px"><button class="btn green" data-a="drSave">💾 Save changes</button><button class="btn danger" data-a="drGroupDel" data-key="${esc(DREG.sel||"")}">🗑 Delete group</button></div></div>`;
+      <div style="display:flex;gap:8px;flex-wrap:wrap">${DREG.edit?`<button class="btn green" data-a="drSave">💾 Save changes</button><button class="btn secondary" data-a="drCancel">✖ Cancel</button>`:`<button class="btn" data-a="drEdit">✏️ Edit</button>`}<button class="btn danger" data-a="drGroupDel" data-key="${esc(DREG.sel||"")}">🗑 Delete group</button></div></div>`;
     if(!DREG.members.length&&!DREG.busy) h+=`<p class="mut">Nobody in this group yet.</p>`;
     else h+=`<div class="adm-tw" style="overflow-x:auto"><table class="adm-t dr-t"><thead><tr><th>#</th><th>Name</th><th>Gmail</th><th>Game mail</th><th>Groups</th><th></th></tr></thead><tbody>`+DREG.members.map((c,i)=>{
       const v=(k,d)=>esc(S.ui[k]!==undefined?S.ui[k]:d), gs=c.groups||[DREG.sel];
+      if(!DREG.edit) return `<tr><td class="mut">${i+1}</td><td><b>${esc(c.name||"")}</b></td><td>${esc(pGmail(c))}</td><td>${c.gameMail?esc(c.gameMail):`<span class="mut">not registered yet</span>`}</td>
+        <td><div class="dr-gs">${gs.map(g=>`<span class="adm-pill ${g===DREG.sel?"on":"ok"}">${esc(g)}</span>`).join("")}</div></td><td></td></tr>`;
       return `<tr><td class="mut">${i+1}</td>
         <td><input type="text" id="pn${i}" data-keep placeholder="Name" value="${v("pn"+i,c.name||"")}"></td>
         <td><input type="email" id="pg${i}" data-keep placeholder="Gmail" value="${v("pg"+i,pGmail(c))}"></td>
@@ -4529,7 +4532,9 @@ function onAppClick(e){
     case "drLoad": drawRegFill(t.dataset.g); break;
     case "drGroupAdd": drawGroupAdd(); break;
     case "drGroupDel": if(t.dataset.key) drawGroupDel(t.dataset.key); break;
-    case "drSel": DREG.sel=t.dataset.key; drawRegLoad(); break;
+    case "drSel": drawEditOff(); DREG.sel=t.dataset.key; drawRegLoad(); break;
+    case "drEdit": DREG.edit=true; render(); break;
+    case "drCancel": drawEditOff(); render(); break;
     case "goXmas": S.notice=null; S.screen="xmas"; render(); drawGroupsLoad(); break;
     case "goDiwali": S.notice=null; S.screen="diwali"; render(); drawGroupsLoad(); break;
     case "goOffline": S.notice=null; S.screen="offline"; try{ history.replaceState(null,"","#/offline-mode"); }catch(x){} render(); break;
