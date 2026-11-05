@@ -3181,7 +3181,8 @@ function drawEditOff(){ DREG.edit=false; Object.keys(S.ui).filter(k=>/^p[ngm]\d+
 const myGroupIds=()=>fbIsMaster()?DREG.groups:(AUTH.groups||[]);
 const gidOk=g=>/^[A-Za-z0-9][A-Za-z0-9 _-]{0,29}$/.test(g);
 const mailOk=e=>EMAIL_RE.test(e)&&!e.includes("/");
-const pGmail=c=>c.gmail||c.email||c.id||"";
+const pGmail=c=>c.gmail!==undefined?c.gmail:(c.email||"");          // may be empty – the Gmail is optional
+const pIdOf=p=>p.gmail||p.gameMail;                                // a person is stored under their Gmail, or their Game mail when there is no Gmail
 function drawLoadBtn(g){
   if(!FB_ON||AUTH.state!=="in") return "";
   const gs=myGroupIds();
@@ -3232,12 +3233,12 @@ async function drawGroupDel(g){
 /* Write one person: put them in exactly `groups` (all other groups lose them), keep gameMailGroups in step. `old` = their previous record, if any. */
 async function drawPersonWrite(old,p,groups){
   const FV=firebase.firestore.FieldValue, ref=g=>FBD.collection("drawGroups").doc(g).collection("members");
-  const oldId=old?pGmail(old):null, oldGm=old&&old.gameMail?old.gameMail.toLowerCase():"";
+  const oldId=old?old.id:null, newId=pIdOf(p), oldGm=old&&old.gameMail?old.gameMail.toLowerCase():"";
   const ops=[];
   DREG.groups.forEach(g=>{
-    if(oldId&&oldId!==p.gmail) ops.push(ref(g).doc(oldId).delete());
-    if(groups.includes(g)) ops.push(ref(g).doc(p.gmail).set({name:p.name,gmail:p.gmail,gameMail:p.gameMail,groups,addedAt:fbNow()}));
-    else ops.push(ref(g).doc(p.gmail).delete());
+    if(oldId&&oldId!==newId) ops.push(ref(g).doc(oldId).delete());
+    if(groups.includes(g)) ops.push(ref(g).doc(newId).set({name:p.name,gmail:p.gmail,gameMail:p.gameMail,groups,addedAt:fbNow()}));
+    else ops.push(ref(g).doc(newId).delete());
   });
   if(oldGm&&oldGm!==p.gameMail) ops.push(FBD.collection("gameMailGroups").doc(oldGm).delete());
   if(p.gameMail) ops.push(groups.length?FBD.collection("gameMailGroups").doc(p.gameMail).set({groups}):FBD.collection("gameMailGroups").doc(p.gameMail).delete());
@@ -3246,9 +3247,10 @@ async function drawPersonWrite(old,p,groups){
 function drawReadPerson(name,gmail,gameMail){
   name=String(name||"").trim(); gmail=String(gmail||"").trim().toLowerCase(); gameMail=String(gameMail||"").trim().toLowerCase();
   if(!name) return {err:"Enter a name."};
-  if(!mailOk(gmail)) return {err:"Enter a valid Gmail."};
+  if(!gmail&&!gameMail) return {err:"Enter a Gmail or a Game mail (at least one)."};
+  if(gmail&&!mailOk(gmail)) return {err:"Gmail doesn't look right."};
   if(gameMail&&!mailOk(gameMail)) return {err:"Game mail doesn't look right (leave it empty if they haven't registered yet)."};
-  if(gameMail&&gameMail===gmail) return {err:"Game mail must be the GameHubVerse login, not the same as the Gmail."};
+  if(gameMail&&gmail&&gameMail===gmail) return {err:"Game mail must be the GameHubVerse login, not the same as the Gmail."};
   return {p:{name,gmail,gameMail}};
 }
 async function drawRegAdd(){
@@ -3257,7 +3259,7 @@ async function drawRegAdd(){
   if(!gs.length) return toast("Tick at least one group.","err");
   try{
     // if this Gmail is already registered, keep their other groups too
-    const have=(await Promise.all(DREG.groups.map(g=>FBD.collection("drawGroups").doc(g).collection("members").doc(r.p.gmail).get()))).map((d,i)=>d.exists?DREG.groups[i]:null).filter(Boolean);
+    const have=(await Promise.all(DREG.groups.map(g=>FBD.collection("drawGroups").doc(g).collection("members").doc(pIdOf(r.p)).get()))).map((d,i)=>d.exists?DREG.groups[i]:null).filter(Boolean);
     const all=[...new Set([...have,...gs])];
     await drawPersonWrite(null,r.p,all);
     S.ui.drName=""; S.ui.drGmail=""; S.ui.drGame=""; toast("Saved "+r.p.name+" in "+all.join(", ")+".","ok");
@@ -3316,6 +3318,7 @@ async function drawRegFill(g){
   catch(e){ return toast(fbErrText(e),"err"); }
   if(!list.length) return toast("Nobody is registered in "+grp+" yet.","err");
   const x=S[g]; x.on=[]; x.n=Math.max(2,list.length); x.names=list.map(c=>c.name); x.emails=list.map(pGmail);   // the draw result goes to their Gmail
+  const noMail=list.filter(c=>!pGmail(c)).length; if(noMail) toast(noMail+" player"+(noMail===1?" has":"s have")+" no Gmail yet – untick them or add it before drawing.","info");
   rosterSave(g); S.notice=null; render();
   toast("Loaded "+list.length+" player"+(list.length===1?"":"s")+" from "+grp+".","ok");
 }
@@ -3334,7 +3337,7 @@ function drawRegHTML(){
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">${DREG.groups.map(g=>`<button class="btn ${g===DREG.sel?"":"secondary"}" data-a="drSel" data-key="${esc(g)}">${esc(g)}</button>`).join("")||`<span class="mut">No groups yet.</span>`}</div></div>`;
   if(DREG.groups.length) h+=`<div class="card2" style="margin-top:14px"><h3 style="margin-top:0">➕ Register a person</h3>
       <input type="text" id="drName" data-keep placeholder="Name" autocomplete="off" value="${esc(S.ui.drName||"")}" style="margin-bottom:6px">
-      <input type="email" id="drGmail" data-keep placeholder="Gmail (real email)" autocomplete="off" value="${esc(S.ui.drGmail||"")}" style="margin-bottom:6px">
+      <input type="email" id="drGmail" data-keep placeholder="Gmail (real email) – optional" autocomplete="off" value="${esc(S.ui.drGmail||"")}" style="margin-bottom:6px">
       <input type="email" id="drGame" data-keep data-gm placeholder="Game mail – pick or search (optional for now)" autocomplete="off" value="${esc(S.ui.drGame||"")}">
       <div class="dr-gs" style="margin-top:8px">${DREG.groups.map(g=>`<label><input type="checkbox" data-dg="${esc(g)}" ${g===DREG.sel?"checked":""} style="width:auto"> ${esc(g)}</label>`).join("")}</div>
       <button class="btn green block" data-a="drAdd" style="margin-top:10px">➕ Register</button></div>`;
@@ -3346,11 +3349,11 @@ function drawRegHTML(){
     if(!DREG.members.length&&!DREG.busy) h+=`<p class="mut">Nobody in this group yet.</p>`;
     else h+=`<div class="adm-tw" style="overflow-x:auto"><table class="adm-t dr-t"><thead><tr><th>#</th><th>Name</th><th>Gmail</th><th>Game mail</th><th>Groups</th><th></th></tr></thead><tbody>`+DREG.members.map((c,i)=>{
       const v=(k,d)=>esc(S.ui[k]!==undefined?S.ui[k]:d), gs=c.groups||[DREG.sel];
-      if(!DREG.edit) return `<tr><td class="mut">${i+1}</td><td><b>${esc(c.name||"")}</b></td><td>${esc(pGmail(c))}</td><td>${c.gameMail?esc(c.gameMail):`<span class="mut">not registered yet</span>`}</td>
+      if(!DREG.edit) return `<tr><td class="mut">${i+1}</td><td><b>${esc(c.name||"")}</b></td><td>${pGmail(c)?esc(pGmail(c)):`<span class="mut">–</span>`}</td><td>${c.gameMail?esc(c.gameMail):`<span class="mut">not registered yet</span>`}</td>
         <td><div class="dr-gs">${gs.map(g=>`<span class="adm-pill ${g===DREG.sel?"on":"ok"}">${esc(g)}</span>`).join("")}</div></td><td></td></tr>`;
       return `<tr><td class="mut">${i+1}</td>
         <td><input type="text" id="pn${i}" data-keep placeholder="Name" value="${v("pn"+i,c.name||"")}"></td>
-        <td><input type="email" id="pg${i}" data-keep placeholder="Gmail" value="${v("pg"+i,pGmail(c))}"></td>
+        <td><input type="email" id="pg${i}" data-keep placeholder="Gmail (optional)" value="${v("pg"+i,pGmail(c))}"></td>
         <td><input type="email" id="pm${i}" data-keep data-gm placeholder="Pick or search" value="${v("pm"+i,c.gameMail||"")}"></td>
         <td><div class="dr-gs">${DREG.groups.map(g=>`<label><input type="checkbox" data-pgrp="${i}" data-g="${esc(g)}" ${gs.includes(g)?"checked":""} style="width:auto"> ${esc(g)}</label>`).join("")}</div></td>
         <td style="white-space:nowrap"><button class="btn secondary" data-a="drDel" data-i="${i}" title="Remove from ${esc(DREG.sel)}">🗑</button></td></tr>`;
