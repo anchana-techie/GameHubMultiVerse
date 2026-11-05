@@ -3406,7 +3406,7 @@ function drawRegHTML(){
    Each signed-in user keeps drawGroups/{group}/presence/{their login e-mail} fresh while the page is open (see firestore.rules).
    The people shown come from the group's registered list, so someone without a login yet shows as "not joined yet".
    The master admin has the Admin page for this and doesn't get the button. */
-const PR={subs:[],members:{},pres:{},key:"",hb:null,open:false,el:null};
+const PR={subs:[],members:{},pres:{},key:"",hb:null,open:false,el:null,err:""};
 const prActive=()=>!!(FB_ON&&FBD&&AUTH.state==="in"&&AUTH.user&&!fbIsMaster()&&(AUTH.groups||[]).length);
 function prStop(){
   PR.subs.forEach(f=>{ try{ f(); }catch(e){} }); PR.subs=[]; clearInterval(PR.hb); PR.hb=null; PR.members={}; PR.pres={}; PR.key=""; PR.open=false;
@@ -3415,7 +3415,7 @@ function prStop(){
 function prBeat(online){
   if(!prActive()) return;
   const gm=AUTH.user.email.toLowerCase(), name=String((AUTH.profile&&AUTH.profile.name)||gm.split("@")[0]).slice(0,30);
-  (AUTH.groups||[]).forEach(g=>FBD.collection("drawGroups").doc(g).collection("presence").doc(gm).set({name,online:online!==false,lastSeen:fbNow()},{merge:true}).catch(()=>{}));
+  (AUTH.groups||[]).forEach(g=>FBD.collection("drawGroups").doc(g).collection("presence").doc(gm).set({name,online:online!==false,lastSeen:fbNow()},{merge:true}).catch(e=>{ PR.err=fbErrText(e); prRender(); }));
 }
 async function prLoadMembers(){
   for(const g of (AUTH.groups||[])){
@@ -3430,7 +3430,7 @@ function prSync(){                                   // (re)start when my groups
   PR.key=key;
   gs.forEach(g=>PR.subs.push(FBD.collection("drawGroups").doc(g).collection("presence").onSnapshot(s=>{
     PR.pres[g]={}; s.docs.forEach(d=>{ PR.pres[g][d.id]=d.data(); }); prRender();
-  },()=>{})));
+  },e=>{ PR.err=fbErrText(e); prRender(); })));
   prLoadMembers(); prBeat(true);
   PR.hb=setInterval(()=>{ if(document.visibilityState==="visible") prBeat(true); prRender(); },60000);
 }
@@ -3457,7 +3457,7 @@ function prRender(){
   const row=p=>`<div class="pr-row"><span class="pr-dot ${p.on?"on":p.joined?"off":"none"}"></span><div class="pr-main"><b>${esc(p.name)}</b>
     <span class="pr-st">${p.on?"online":p.joined?"last seen "+fbAgo(p.ms):"not joined yet"}</span></div><div class="pr-tags">${p.groups.map(g=>`<span class="pr-tag">${esc(g)}</span>`).join("")}</div></div>`;
   el.innerHTML=(PR.open?`<div class="pr-panel"><div class="pr-head"><b>👥 My groups</b><span class="pr-st">${online} online · ${list.length} people</span></div>
-      <div class="pr-list">${list.length?list.map(row).join(""):`<p class="pr-st" style="padding:10px">Nobody else is registered in your groups yet.</p>`}</div></div>`:"")
+      ${PR.err?`<div class="pr-st" style="padding:8px 14px;color:#ffb4b4">⚠ Couldn't read live status (${esc(PR.err)}) – publish the latest firestore.rules in Firebase.</div>`:""}<div class="pr-list">${list.length?list.map(row).join(""):`<p class="pr-st" style="padding:10px">Nobody else is registered in your groups yet.</p>`}</div></div>`:"")
     +`<button class="pr-fab" data-prt title="People in my groups">👥${online?`<span class="pr-badge">${online}</span>`:""}</button>`;
 }
 document.addEventListener("visibilitychange",()=>prBeat(document.visibilityState==="visible"));
