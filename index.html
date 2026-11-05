@@ -619,6 +619,12 @@
   .adm-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}
   .adm-card{background:#ffffff0d;border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:2px}
   .adm-card b{font-size:1.35rem}.adm-card span{font-size:.78rem;color:var(--muted)}
+  .dr-wrap{width:min(1300px,calc(100vw - 32px));position:relative;left:50%;transform:translateX(-50%)}
+  .dr-grid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:14px;align-items:start}
+  @media(max-width:900px){.dr-grid{grid-template-columns:minmax(0,1fr)}}
+  .dr-t input[type=text],.dr-t input[type=email]{padding:6px 8px;font-size:.85rem;min-width:140px}
+  .dr-t td{vertical-align:middle}
+  .dr-gs{display:flex;gap:8px;flex-wrap:wrap}.dr-gs label{display:flex;gap:4px;align-items:center;margin:0;font-size:.78rem;white-space:nowrap}
   .adm-tw{margin-top:10px}
   .adm-det .adm-tw{overflow-x:auto}
   .adm-t{width:100%;border-collapse:collapse;font-size:.84rem;table-layout:auto}
@@ -3268,35 +3274,38 @@ function gameMailOptions(){                       // every invited / registered 
   return [...set].sort();
 }
 function drawRegHTML(){
-  let h=`<div class="msg info">Stored in Firebase. Each person has a <b>Gmail</b> (where the draw result is e-mailed) and a <b>Game mail</b> (their GameHubVerse login – it decides which groups they see). Game mail can be left empty until they register; edit it later in the list. Only the master admin can change any of this.</div>`;
+  let h=`<div class="dr-wrap"><div class="msg info">Stored in Firebase. Each person has a <b>Gmail</b> (where the draw result is e-mailed) and a <b>Game mail</b> (their GameHubVerse login – it decides which groups they see). Game mail can be left empty until they register; edit it later in the table. Only the master admin can change any of this.</div>`;
   if(DREG.err) h+=`<div class="msg err">${esc(DREG.err)}</div>`;
-  h+=`<datalist id="gmList">${gameMailOptions().map(e=>`<option value="${esc(e)}"></option>`).join("")}</datalist>`;
+  h+=`<datalist id="gmList">${gameMailOptions().map(e=>`<option value="${esc(e)}"></option>`).join("")}</datalist><div class="dr-grid"><div>`;
+  // ---- left: groups + register form ----
   h+=`<div class="card2"><h3 style="margin-top:0">🏷 Groups</h3>
-    <div class="row"><div><input type="text" id="drGid" data-keep maxlength="30" placeholder="New group ID, e.g. FAMILY" autocomplete="off" value="${esc(S.ui.drGid||"")}"></div>
-    <div><button class="btn green" data-a="drGroupAdd">➕ Create group</button></div></div>
+    <input type="text" id="drGid" data-keep maxlength="30" placeholder="New group ID, e.g. FAMILY" autocomplete="off" value="${esc(S.ui.drGid||"")}">
+    <button class="btn green block" data-a="drGroupAdd" style="margin-top:8px">➕ Create group</button>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">${DREG.groups.map(g=>`<button class="btn ${g===DREG.sel?"":"secondary"}" data-a="drSel" data-key="${esc(g)}">${esc(g)}</button>`).join("")||`<span class="mut">No groups yet.</span>`}</div></div>`;
-  if(DREG.groups.length){
-    h+=`<div class="card2" style="margin-top:14px"><h3 style="margin-top:0">➕ Register a person</h3>
+  if(DREG.groups.length) h+=`<div class="card2" style="margin-top:14px"><h3 style="margin-top:0">➕ Register a person</h3>
       <input type="text" id="drName" data-keep placeholder="Name" autocomplete="off" value="${esc(S.ui.drName||"")}" style="margin-bottom:6px">
       <input type="email" id="drGmail" data-keep placeholder="Gmail (real email)" autocomplete="off" value="${esc(S.ui.drGmail||"")}" style="margin-bottom:6px">
       <input type="email" id="drGame" data-keep list="gmList" placeholder="Game mail – pick or search (optional for now)" autocomplete="off" value="${esc(S.ui.drGame||"")}">
-      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">${DREG.groups.map(g=>`<label style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" data-dg="${esc(g)}" ${g===DREG.sel?"checked":""} style="width:auto"> ${esc(g)}</label>`).join("")}</div>
+      <div class="dr-gs" style="margin-top:8px">${DREG.groups.map(g=>`<label><input type="checkbox" data-dg="${esc(g)}" ${g===DREG.sel?"checked":""} style="width:auto"> ${esc(g)}</label>`).join("")}</div>
       <button class="btn green block" data-a="drAdd" style="margin-top:10px">➕ Register</button></div>`;
-    h+=`<div class="card2" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3 style="margin:0">👥 ${esc(DREG.sel||"")} (${DREG.members.length})${DREG.busy?" – loading…":""}</h3>
+  h+=`</div><div>`;
+  // ---- right: registered people table ----
+  if(DREG.groups.length){
+    h+=`<div class="card2"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0">👥 ${esc(DREG.sel||"")} (${DREG.members.length})${DREG.busy?" – loading…":""}</h3>
       <button class="btn danger" data-a="drGroupDel" data-key="${esc(DREG.sel||"")}">🗑 Delete group</button></div>`;
-    h+=DREG.members.map((c,i)=>{
-      const v=(k,d)=>esc(S.ui[k]!==undefined?S.ui[k]:d), gs=c.groups||[DREG.sel];
-      return `<div class="xm-status" style="display:block;margin-top:10px">
-        <input type="text" id="pn${i}" data-keep placeholder="Name" value="${v("pn"+i,c.name||"")}" style="margin-bottom:4px">
-        <input type="email" id="pg${i}" data-keep placeholder="Gmail" value="${v("pg"+i,pGmail(c))}" style="margin-bottom:4px">
-        <input type="email" id="pm${i}" data-keep list="gmList" placeholder="Game mail – pick or search (not registered yet)" value="${v("pm"+i,c.gameMail||"")}">
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">${DREG.groups.map(g=>`<label style="display:flex;gap:5px;align-items:center;margin:0"><input type="checkbox" data-pgrp="${i}" data-g="${esc(g)}" ${gs.includes(g)?"checked":""} style="width:auto"> ${esc(g)}</label>`).join("")}</div>
-        <div style="display:flex;gap:8px;margin-top:8px"><button class="btn green" data-a="drSave" data-i="${i}">💾 Save</button><button class="btn secondary" data-a="drDel" data-i="${i}">🗑 Remove from ${esc(DREG.sel)}</button></div></div>`;
-    }).join("");
     if(!DREG.members.length&&!DREG.busy) h+=`<p class="mut">Nobody in this group yet.</p>`;
+    else h+=`<div class="adm-tw" style="overflow-x:auto"><table class="adm-t dr-t"><thead><tr><th>#</th><th>Name</th><th>Gmail</th><th>Game mail</th><th>Groups</th><th></th></tr></thead><tbody>`+DREG.members.map((c,i)=>{
+      const v=(k,d)=>esc(S.ui[k]!==undefined?S.ui[k]:d), gs=c.groups||[DREG.sel];
+      return `<tr><td class="mut">${i+1}</td>
+        <td><input type="text" id="pn${i}" data-keep placeholder="Name" value="${v("pn"+i,c.name||"")}"></td>
+        <td><input type="email" id="pg${i}" data-keep placeholder="Gmail" value="${v("pg"+i,pGmail(c))}"></td>
+        <td><input type="email" id="pm${i}" data-keep list="gmList" placeholder="Pick or search" value="${v("pm"+i,c.gameMail||"")}"></td>
+        <td><div class="dr-gs">${DREG.groups.map(g=>`<label><input type="checkbox" data-pgrp="${i}" data-g="${esc(g)}" ${gs.includes(g)?"checked":""} style="width:auto"> ${esc(g)}</label>`).join("")}</div></td>
+        <td style="white-space:nowrap"><button class="btn green" data-a="drSave" data-i="${i}" title="Save">💾</button> <button class="btn secondary" data-a="drDel" data-i="${i}" title="Remove from ${esc(DREG.sel)}">🗑</button></td></tr>`;
+    }).join("")+`</tbody></table></div>`;
     h+=`</div>`;
-  }
-  return h;
+  } else h+=`<div class="card2"><p class="mut" style="margin:0">Create a group on the left to start registering people.</p></div>`;
+  return h+`</div></div></div>`;
 }
 
 /* ================= ROOM UI ================= */
