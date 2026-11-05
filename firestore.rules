@@ -41,6 +41,11 @@ service cloud.firestore {
         allow read: if isMaster() || (signedIn() && gid in myGroups());
         allow write: if isMaster();
       }
+      // Presence: each person keeps their own doc fresh; everyone in the group can read them.
+      match /presence/{gm} {
+        allow read: if isMaster() || (signedIn() && gid in myGroups());
+        allow write: if signedIn() && gm == mail() && gid in myGroups();
+      }
     }
 
     // Password recovery: the password encrypted with a key made from the person's security answer. Looked up by e-mail while signed out.
