@@ -3248,6 +3248,7 @@ function drawReadPerson(name,gmail,gameMail){
   if(!name) return {err:"Enter a name."};
   if(!mailOk(gmail)) return {err:"Enter a valid Gmail."};
   if(gameMail&&!mailOk(gameMail)) return {err:"Game mail doesn't look right (leave it empty if they haven't registered yet)."};
+  if(gameMail&&gameMail===gmail) return {err:"Game mail must be the GameHubVerse login, not the same as the Gmail."};
   return {p:{name,gmail,gameMail}};
 }
 async function drawRegAdd(){
@@ -5093,6 +5094,7 @@ async function fbInit(){
   FBA.onAuthStateChanged(u=>fbOnUser(u));
 }
 function fbStop(){
+  if(AUTH.unGrp){ try{ AUTH.unGrp(); }catch(e){} AUTH.unGrp=null; }
   clearInterval(AUTH.hb); AUTH.hb=null; LIVE_KEY=null;
   if(AUTH.unSelf){ try{ AUTH.unSelf(); }catch(e){} AUTH.unSelf=null; }
   AUTH.adm.subs.forEach(f=>{ try{ f(); }catch(e){} }); AUTH.adm.subs=[]; AUTH.adm.invites=[]; AUTH.adm.users={};
@@ -5137,6 +5139,7 @@ async function fbOnUser(u){
 }
 function fbStart(u,ref){
   fbStop();
+  try{ AUTH.unGrp=FBD.collection("gameMailGroups").doc(u.email.toLowerCase()).onSnapshot(d=>{ AUTH.groups=d.exists?(d.data().groups||[]):[]; render(); },()=>{}); }catch(e){}   // live: group changes by the master show up without re-login
   AUTH.unSelf=ref.onSnapshot(s=>{
     if(!s.exists&&AUTH.state==="in"&&!AUTH.isAdmin&&!s.metadata.fromCache){ AUTH.err="Your account was removed by the admin."; u.delete().catch(()=>{}); FBA.signOut().catch(()=>{}); }
     else if(s.exists){ AUTH.profile=s.data(); const a=AUTH.profile.role==="admin"; if(a!==AUTH.isAdmin){ AUTH.isAdmin=a; render(); } }
