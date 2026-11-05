@@ -3263,9 +3263,14 @@ async function drawRegFill(g){
   rosterSave(g); S.notice=null; render();
   toast("Loaded "+list.length+" player"+(list.length===1?"":"s")+" from "+grp+".","ok");
 }
+function gameMailOptions(){                       // every invited / registered login e-mail – shown as a searchable dropdown
+  const set=new Set(); AUTH.adm.invites.forEach(i=>set.add(i.id)); Object.values(AUTH.adm.users).forEach(u=>u.email&&set.add(u.email));
+  return [...set].sort();
+}
 function drawRegHTML(){
   let h=`<div class="msg info">Stored in Firebase. Each person has a <b>Gmail</b> (where the draw result is e-mailed) and a <b>Game mail</b> (their GameHubVerse login – it decides which groups they see). Game mail can be left empty until they register; edit it later in the list. Only the master admin can change any of this.</div>`;
   if(DREG.err) h+=`<div class="msg err">${esc(DREG.err)}</div>`;
+  h+=`<datalist id="gmList">${gameMailOptions().map(e=>`<option value="${esc(e)}"></option>`).join("")}</datalist>`;
   h+=`<div class="card2"><h3 style="margin-top:0">🏷 Groups</h3>
     <div class="row"><div><input type="text" id="drGid" data-keep maxlength="30" placeholder="New group ID, e.g. FAMILY" autocomplete="off" value="${esc(S.ui.drGid||"")}"></div>
     <div><button class="btn green" data-a="drGroupAdd">➕ Create group</button></div></div>
@@ -3274,7 +3279,7 @@ function drawRegHTML(){
     h+=`<div class="card2" style="margin-top:14px"><h3 style="margin-top:0">➕ Register a person</h3>
       <input type="text" id="drName" data-keep placeholder="Name" autocomplete="off" value="${esc(S.ui.drName||"")}" style="margin-bottom:6px">
       <input type="email" id="drGmail" data-keep placeholder="Gmail (real email)" autocomplete="off" value="${esc(S.ui.drGmail||"")}" style="margin-bottom:6px">
-      <input type="email" id="drGame" data-keep placeholder="Game mail (…@gamehubverse.com) – optional for now" autocomplete="off" value="${esc(S.ui.drGame||"")}">
+      <input type="email" id="drGame" data-keep list="gmList" placeholder="Game mail – pick or search (optional for now)" autocomplete="off" value="${esc(S.ui.drGame||"")}">
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">${DREG.groups.map(g=>`<label style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" data-dg="${esc(g)}" ${g===DREG.sel?"checked":""} style="width:auto"> ${esc(g)}</label>`).join("")}</div>
       <button class="btn green block" data-a="drAdd" style="margin-top:10px">➕ Register</button></div>`;
     h+=`<div class="card2" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3 style="margin:0">👥 ${esc(DREG.sel||"")} (${DREG.members.length})${DREG.busy?" – loading…":""}</h3>
@@ -3284,7 +3289,7 @@ function drawRegHTML(){
       return `<div class="xm-status" style="display:block;margin-top:10px">
         <input type="text" id="pn${i}" data-keep placeholder="Name" value="${v("pn"+i,c.name||"")}" style="margin-bottom:4px">
         <input type="email" id="pg${i}" data-keep placeholder="Gmail" value="${v("pg"+i,pGmail(c))}" style="margin-bottom:4px">
-        <input type="email" id="pm${i}" data-keep placeholder="Game mail (not registered yet)" value="${v("pm"+i,c.gameMail||"")}">
+        <input type="email" id="pm${i}" data-keep list="gmList" placeholder="Game mail – pick or search (not registered yet)" value="${v("pm"+i,c.gameMail||"")}">
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">${DREG.groups.map(g=>`<label style="display:flex;gap:5px;align-items:center;margin:0"><input type="checkbox" data-pgrp="${i}" data-g="${esc(g)}" ${gs.includes(g)?"checked":""} style="width:auto"> ${esc(g)}</label>`).join("")}</div>
         <div style="display:flex;gap:8px;margin-top:8px"><button class="btn green" data-a="drSave" data-i="${i}">💾 Save</button><button class="btn secondary" data-a="drDel" data-i="${i}">🗑 Remove from ${esc(DREG.sel)}</button></div></div>`;
     }).join("");
@@ -5213,7 +5218,7 @@ function trackSweep(){ if(TR.key&&!(S&&S.screen==="room"&&S.room&&S.room.phase==
 
 /* ---- admin: live invites + users ---- */
 function fbAdminSync(){
-  const need=AUTH.state==="in"&&AUTH.isAdmin&&S&&(S.screen==="admin"||NET.spec), A=AUTH.adm;
+  const need=AUTH.state==="in"&&AUTH.isAdmin&&S&&(S.screen==="admin"||S.screen==="drawreg"||NET.spec), A=AUTH.adm;
   if(need&&!A.subs.length){
     const bad=e=>{ A.err=fbErrText(e); render(); };
     A.subs=[
