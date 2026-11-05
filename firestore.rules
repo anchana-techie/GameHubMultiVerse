@@ -10,6 +10,9 @@ service cloud.firestore {
     function profile(uid) { return get(/databases/$(database)/documents/users/$(uid)).data; }
     function isAdmin()  { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && profile(request.auth.uid).role == 'admin'; }
     function isMaster() { return signedIn() && mail() == 'admin@gamehubverse.com'; }
+    function myGroups() { return exists(/databases/$(database)/documents/users/$(request.auth.uid)) ? profile(request.auth.uid).get('groups', []) : []; }
+    // Group IDs on a profile may only be changed by the master.
+    function sameGroups() { return request.resource.data.get('groups', []) == resource.data.get('groups', []); }
     function inviteOf(e) { return get(/databases/$(database)/documents/invites/$(e)).data; }
 
     // Invites: the admin manages them. Anyone may look up ONE invite by e-mail (needed to check an address before registering).
@@ -22,6 +25,17 @@ service cloud.firestore {
             && request.resource.data.status == 'registered'
             && request.resource.data.uid == request.auth.uid
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'uid', 'registeredAt', 'name']));
+    }
+
+    // Email-draw groups. Only the master creates groups and registers people (names + e-mails) in them.
+    // A signed-in user can read a group's people ONLY if the master put that group ID in their own profile (users/{uid}.groups).
+    match /drawGroups/{gid} {
+      allow read: if isMaster() || (signedIn() && gid in myGroups());
+      allow write: if isMaster();
+      match /members/{email} {
+        allow read: if isMaster() || (signedIn() && gid in myGroups());
+        allow write: if isMaster();
+      }
     }
 
     // Password recovery: the password encrypted with a key made from the person's security answer. Looked up by e-mail while signed out.
@@ -39,9 +53,10 @@ service cloud.firestore {
         && request.resource.data.role == 'user'
         && inviteOf(mail()).status == 'invited';
       allow update: if isMaster()
-        || (isAdmin() && request.resource.data.role == resource.data.role)
+        || (isAdmin() && request.resource.data.role == resource.data.role && sameGroups())
         || (signedIn() && request.auth.uid == uid
             && request.resource.data.role == resource.data.role
+            && sameGroups()
             && request.resource.data.email == resource.data.email);
       allow delete: if isMaster() || (isAdmin() && resource.data.role != 'admin');
 

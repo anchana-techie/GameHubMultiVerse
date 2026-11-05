@@ -3070,6 +3070,7 @@ function xmasHTML(){
       <input type="text" data-xn="${i}" placeholder="Name" value="${esc(x.names[i]||"")}" autocomplete="off">
       <input type="email" data-xe="${i}" placeholder="Email id" value="${esc(x.emails[i]||"")}" autocomplete="off"></div>`;
   }
+  h+=drawLoadBtn("xm");
   h+=cfgHTML();
   h+=`<button class="btn green block" id="xmDraw" style="margin-top:8px">🎲 Draw &amp; send emails</button>`;
   return h;
@@ -3137,8 +3138,111 @@ function dwHTML(){
       <input type="text" data-dn="${i}" placeholder="Name" value="${esc(x.names[i]||"")}" autocomplete="off">
       <input type="email" data-de="${i}" placeholder="Email id" value="${esc(x.emails[i]||"")}" autocomplete="off"></div>`;
   }
+  h+=drawLoadBtn("dw");
   h+=cfgHTML();
   h+=`<button class="btn green block" id="dwDraw" style="margin-top:8px">🎲 Draw &amp; send emails</button>`;
+  return h;
+}
+
+/* ---- Registered players for the email draws ----
+   Master admin creates GROUPS (drawGroups/{groupId}), adds people to groups (drawGroups/{groupId}/members/{email}) and gives
+   each account its group IDs (users/{uid}.groups). A user can only load people from their own groups – enforced by firestore.rules. */
+const DREG={groups:[],loaded:false,sel:null,members:[],busy:false,err:null};
+const myGroupIds=()=>fbIsMaster()?DREG.groups:((AUTH.profile&&AUTH.profile.groups)||[]);
+const gidOk=g=>/^[A-Za-z0-9][A-Za-z0-9 _-]{0,29}$/.test(g);
+function drawLoadBtn(g){
+  if(!FB_ON||AUTH.state!=="in") return "";
+  const gs=myGroupIds();
+  if(!gs.length) return `<div class="msg info" style="margin-top:10px">📇 No group assigned to you yet – ask the master admin to give you a group ID to load registered players.</div>`;
+  const cur=gs.includes(S.ui.drPick)?S.ui.drPick:gs[0];
+  return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px"><select id="drPick" data-keep style="max-width:220px">${gs.map(x=>`<option ${x===cur?"selected":""}>${esc(x)}</option>`).join("")}</select>
+    <button class="btn secondary" data-a="drLoad" data-g="${g}">📇 Load registered players</button></div>`;
+}
+async function drawGroupsLoad(){
+  if(!FBD||!fbIsMaster()) return;
+  try{ const s=await FBD.collection("drawGroups").get(); DREG.groups=s.docs.map(d=>d.id).sort(); DREG.loaded=true; DREG.err=null; }
+  catch(e){ DREG.err=fbErrText(e)+" (publish the updated firestore.rules)"; }
+  render();
+}
+async function drawRegLoad(){
+  if(!FBD) return;
+  DREG.busy=true; render();
+  await drawGroupsLoad();
+  if(!DREG.groups.includes(DREG.sel)) DREG.sel=DREG.groups[0]||null;
+  DREG.members=[];
+  if(DREG.sel){
+    try{ const s=await FBD.collection("drawGroups").doc(DREG.sel).collection("members").get();
+      DREG.members=s.docs.map(d=>Object.assign({email:d.id},d.data())).sort((a,b)=>(a.name||"").localeCompare(b.name||"")); }
+    catch(e){ DREG.err=fbErrText(e); }
+  }
+  DREG.busy=false; render();
+}
+async function drawGroupAdd(){
+  const g=String(S.ui.drGid||"").trim().toUpperCase();
+  if(!gidOk(g)) return toast("Group ID: letters, numbers, space, - or _ (max 30).","err");
+  try{ await FBD.collection("drawGroups").doc(g).set({createdAt:fbNow()},{merge:true}); S.ui.drGid=""; DREG.sel=g; await drawRegLoad(); }catch(e){ toast(fbErrText(e),"err"); }
+}
+async function drawGroupDel(g){
+  if(!confirm("Delete group "+g+" and all the people registered in it? (Accounts keep the ID until you remove it.)")) return;
+  try{
+    const s=await FBD.collection("drawGroups").doc(g).collection("members").get();
+    await Promise.all(s.docs.map(d=>d.ref.delete()));
+    await FBD.collection("drawGroups").doc(g).delete(); await drawRegLoad();
+  }catch(e){ toast(fbErrText(e),"err"); }
+}
+async function drawRegAdd(){
+  const name=String(S.ui.drName||"").trim(), email=String(S.ui.drEmail||"").trim().toLowerCase();
+  const gs=[...document.querySelectorAll("[data-dg]:checked")].map(el=>el.dataset.dg);
+  if(!name) return toast("Enter a name.","err");
+  if(!EMAIL_RE.test(email)||email.includes("/")) return toast("Enter a valid email id.","err");
+  if(!gs.length) return toast("Tick at least one group.","err");
+  try{
+    await Promise.all(gs.map(g=>FBD.collection("drawGroups").doc(g).collection("members").doc(email).set({name,email,addedAt:fbNow()})));
+    S.ui.drName=""; S.ui.drEmail=""; toast("Saved "+name+" in "+gs.join(", ")+".","ok");
+    await drawRegLoad();
+  }catch(e){ toast(fbErrText(e),"err"); }
+}
+async function drawRegDel(email){
+  try{ await FBD.collection("drawGroups").doc(DREG.sel).collection("members").doc(email).delete(); await drawRegLoad(); }catch(e){ toast(fbErrText(e),"err"); }
+}
+async function drawRegFill(g){
+  const gs=myGroupIds(), grp=gs.includes(S.ui.drPick)?S.ui.drPick:gs[0];
+  if(!grp) return toast("No group assigned to you yet.","err");
+  let list;
+  try{ const s=await FBD.collection("drawGroups").doc(grp).collection("members").get();
+    list=s.docs.map(d=>Object.assign({email:d.id},d.data())).sort((a,b)=>(a.name||"").localeCompare(b.name||"")).slice(0,30); }
+  catch(e){ return toast(fbErrText(e),"err"); }
+  if(!list.length) return toast("Nobody is registered in "+grp+" yet.","err");
+  const x=S[g]; x.n=Math.max(2,list.length); x.names=list.map(c=>c.name); x.emails=list.map(c=>c.email);
+  rosterSave(g); S.notice=null; render();
+  toast("Loaded "+list.length+" player"+(list.length===1?"":"s")+" from "+grp+".","ok");
+}
+async function admGroupToggle(email,g){
+  const u=Object.values(AUTH.adm.users).find(x=>x.email===email); if(!u||!fbIsMaster()) return;
+  const has=(u.groups||[]).includes(g), FV=firebase.firestore.FieldValue;
+  try{ await FBD.collection("users").doc(u.id).update({groups:has?FV.arrayRemove(g):FV.arrayUnion(g)}); }catch(e){ toast(fbErrText(e),"err"); }
+}
+function drawRegHTML(){
+  let h=`<div class="msg info">Stored in Firebase. Create <b>group IDs</b>, register people into them, then give group IDs to accounts (Admin → People → open a person). A user can only load people from their own groups. Only the master admin can change any of this.</div>`;
+  if(DREG.err) h+=`<div class="msg err">${esc(DREG.err)}</div>`;
+  h+=`<div class="card2"><h3 style="margin-top:0">🏷 Groups</h3>
+    <div class="row"><div><input type="text" id="drGid" data-keep maxlength="30" placeholder="New group ID, e.g. FAMILY" autocomplete="off" value="${esc(S.ui.drGid||"")}"></div>
+    <div><button class="btn green" data-a="drGroupAdd">➕ Create group</button></div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">${DREG.groups.map(g=>`<button class="btn ${g===DREG.sel?"":"secondary"}" data-a="drSel" data-key="${esc(g)}">${esc(g)}</button>`).join("")||`<span class="mut">No groups yet.</span>`}</div></div>`;
+  if(DREG.groups.length){
+    h+=`<div class="card2" style="margin-top:14px"><h3 style="margin-top:0">➕ Register a person</h3>
+      <div class="xm-row"><span class="idx">+</span>
+      <input type="text" id="drName" data-keep placeholder="Name" autocomplete="off" value="${esc(S.ui.drName||"")}">
+      <input type="email" id="drEmail" data-keep placeholder="Email id" autocomplete="off" value="${esc(S.ui.drEmail||"")}"></div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">${DREG.groups.map(g=>`<label style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" data-dg="${esc(g)}" ${g===DREG.sel?"checked":""} style="width:auto"> ${esc(g)}</label>`).join("")}</div>
+      <button class="btn green block" data-a="drAdd" style="margin-top:10px">➕ Register</button></div>`;
+    h+=`<div class="card2" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3 style="margin:0">👥 ${esc(DREG.sel||"")} (${DREG.members.length})${DREG.busy?" – loading…":""}</h3>
+      <button class="btn danger" data-a="drGroupDel" data-key="${esc(DREG.sel||"")}">🗑 Delete group</button></div>`;
+    h+=DREG.members.map(c=>`<div class="xm-status"><span>${esc(c.name||"")} <span style="color:var(--muted)">(${esc(c.email)})</span></span>
+      <button class="btn secondary" data-a="drDel" data-key="${esc(c.email)}">🗑</button></div>`).join("");
+    if(!DREG.members.length&&!DREG.busy) h+=`<p class="mut">Nobody in this group yet.</p>`;
+    h+=`</div>`;
+  }
   return h;
 }
 
@@ -3174,6 +3278,9 @@ function landingHTML(){
     <button class="game-btn" style="--glow:#5ee08a" data-a="goXmas"><span class="ico">🎄</span><b>ChristMom ChristChild</b><span class="d">Secretly match everyone with a Christ Child by email.</span></button>
     <button class="game-btn" style="--glow:#ff9a3c" data-a="goDiwali"><span class="ico">🪔</span><b>Diwali Daddy Diwali Kid</b><span class="d">Secretly match everyone with a Diwali Kid by email.</span></button>
   </div>
+  ${FB_ON&&fbIsMaster()?`<div class="game-grid" style="margin-top:14px;grid-template-columns:minmax(0,1fr)">
+    <button class="game-btn wide" style="--glow:#b48cff" data-a="goDrawReg"><span class="ico">📇</span><b>Register players &amp; groups</b><span class="d">Master admin only: create group IDs and save names &amp; emails (stored in Firebase) for the email draws.</span></button>
+  </div>`:""}
   <h3 class="home-h" style="margin-top:34px">No signal?</h3><div class="game-grid">
     <button class="game-btn" style="--glow:#46d6a4" data-a="goOffline"><span class="ico">📴</span><b>Offline mode</b><span class="d">See which games and features work without an internet connection – and play them.</span></button>
   </div>`;
@@ -3700,6 +3807,7 @@ function mainHTML(){
   switch(S.screen){
     case "admin": return AUTH.isAdmin?topbar("🛡 Admin – people & activity",true)+adminHTML():landingHTML();
     case "mystats": return topbar("📊 My activity",true)+myStatsHTML();
+    case "drawreg": return fbIsMaster()?topbar("📇 Register players",true)+drawRegHTML():landingHTML();
     case "xmas": return topbar("🎄 ChristMom ChristChild",true)+xmasHTML();
     case "diwali": return topbar("🪔 Diwali Daddy Diwali Kid",true)+dwHTML();
     case "entry": return entryHTML();
@@ -4305,7 +4413,7 @@ function onAppClick(e){
     case "recSave": doRecSave(); break;
     case "authLogout": doAuthLogout(); break;
     case "authRetry": fbInit(); break;
-    case "goAdmin": S.notice=null; S.screen="admin"; render(); break;
+    case "goAdmin": S.notice=null; S.screen="admin"; render(); drawGroupsLoad(); break;
     case "goMyStats": S.notice=null; S.screen="mystats"; AUTH.my.act=null; render(); if(AUTH.user&&FBD){ admLoadAct(AUTH.user.uid,AUTH.my,"act"); FBD.collection("recovery").doc(AUTH.user.email.toLowerCase()).get().then(d=>{ AUTH.my.rec=d.exists; render(); }).catch(()=>{}); } break;
     case "admInvite": admInvite(); break;
     case "admToggle": { const k=t.dataset.key, u=Object.values(AUTH.adm.users).find(x=>x.email===k); AUTH.adm.open=AUTH.adm.open===k?null:k; render(); if(AUTH.adm.open&&u) admLoadAct(u.id,AUTH.adm.act,u.id); break; }
@@ -4321,8 +4429,16 @@ function onAppClick(e){
     case "admCopy": try{ navigator.clipboard.writeText("You're invited to Game Hub: "+admLink()+" – choose Register and use "+t.dataset.key); toast("Invite message copied – paste it to them.","ok"); }catch(x){ toast(admLink(),"info"); } break;
     case "go": S.notice=null; S.game=t.dataset.g; S.screen="entry"; render(); break;
     case "goJoin": S.notice=null; S.game=null; S.screen="entry"; render(); break;
-    case "goXmas": S.notice=null; S.screen="xmas"; render(); break;
-    case "goDiwali": S.notice=null; S.screen="diwali"; render(); break;
+    case "goDrawReg": S.notice=null; S.screen="drawreg"; render(); drawRegLoad(); break;
+    case "drAdd": drawRegAdd(); break;
+    case "drDel": drawRegDel(t.dataset.key); break;
+    case "drLoad": drawRegFill(t.dataset.g); break;
+    case "drGroupAdd": drawGroupAdd(); break;
+    case "drGroupDel": if(t.dataset.key) drawGroupDel(t.dataset.key); break;
+    case "drSel": DREG.sel=t.dataset.key; drawRegLoad(); break;
+    case "admGrp": admGroupToggle(t.dataset.key,t.dataset.g); break;
+    case "goXmas": S.notice=null; S.screen="xmas"; render(); drawGroupsLoad(); break;
+    case "goDiwali": S.notice=null; S.screen="diwali"; render(); drawGroupsLoad(); break;
     case "goOffline": S.notice=null; S.screen="offline"; try{ history.replaceState(null,"","#/offline-mode"); }catch(x){} render(); break;
     case "createLocal": createLocalRoom(S.game); break;
     case "offStart": S.game=t.dataset.g; createLocalRoom(S.game,t.dataset.solo); break;
@@ -5134,7 +5250,7 @@ function acctBarHTML(){
   if(AUTH.state==="offline") return `<div class="msg warn">📴 Signed-out offline mode – accounts need an internet connection. The offline games below still work.</div>`;
   if(AUTH.state!=="in") return "";
   const p=AUTH.profile||{};
-  return `<div class="acct-bar"><span class="chip">👤 ${esc(p.name||AUTH.user.email)}${AUTH.isAdmin?(fbIsMaster()?" · 👑 Master admin":" · 🛡 Admin"):""}</span>
+  return `<div class="acct-bar"><span class="chip">👤 ${esc(p.name||AUTH.user.email)}${AUTH.isAdmin?(fbIsMaster()?" · 👑 Master admin":" · 🛡 Admin"):""}</span>${(p.groups&&p.groups.length)?`<span class="chip" title="Your group IDs">🏷 ${p.groups.map(esc).join(", ")}</span>`:""}
     <button class="btn secondary" data-a="goMyStats">📊 My activity</button>${AUTH.isAdmin?`<button class="btn secondary" data-a="goAdmin">🛡 Admin</button>`:""}<button class="btn secondary" data-a="authLogout">Sign out</button></div>`;
 }
 const gameLabel=g=>GTITLE[g]||g;
@@ -5188,7 +5304,7 @@ function adminHTML(){
     let row=`<tr class="${r.status}"><td class="wide"><button class="adm-name" data-a="admToggle" data-key="${esc(r.email)}" ${u?"":"disabled"}>${u?(open?"▾ ":"▸ "):""}<b>${esc(r.name||(u?"–":""))}</b></button>${isAdm?` <span class="adm-pill on">${isMst?"master":"admin"}</span>`:""}<div class="mut">${esc(r.email)}</div></td><td class="wide" ${u?`title="Last seen ${fbAgo(fbMs(u.lastSeen))}"`:""}>${st}</td>
       <td data-l="Last sign-in" ${u?`title="${fbDate(fbMs(u.lastLoginAt))}"`:""}>${u?fbAgo(fbMs(u.lastLoginAt)):"–"}</td><td data-l="Sign-ins">${u?u.loginCount||0:"–"}</td>
       <td data-l="Games" ${u&&u.lastGame?`title="Last played: ${esc(gameLabel(u.lastGame))}"`:""}>${u?(u.gamesPlayed||0)+" · "+fbDur(u.totalSeconds):"–"}</td><td class="mut adm-dev" data-l="Device">${u?esc(u.device||"–"):"–"}</td><td class="wide" data-l="Game view">${gv}</td><td class="adm-ac wide">${acts}</td></tr>`;
-    if(open&&u) row+=`<tr class="adm-det"><td colspan="8"><div class="mut" style="margin-bottom:6px">Registered ${fbDate(fbMs(u.createdAt))} · ${esc(u.email)}</div><h4>Games</h4>${statsTableHTML(u.stats)}<h4 style="margin-top:12px">Recent activity</h4>${actListHTML(A.act[u.id])}</td></tr>`;
+    if(open&&u) row+=`<tr class="adm-det"><td colspan="8"><div class="mut" style="margin-bottom:6px">Registered ${fbDate(fbMs(u.createdAt))} · ${esc(u.email)}</div>${fbIsMaster()?`<div style="margin-bottom:10px"><b>🏷 Group IDs</b> <span class="mut">(tap to give / remove)</span><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${DREG.groups.map(g=>`<button class="btn ${(u.groups||[]).includes(g)?"":"secondary"}" data-a="admGrp" data-key="${esc(u.email)}" data-g="${esc(g)}">${(u.groups||[]).includes(g)?"✓ ":""}${esc(g)}</button>`).join("")||`<span class="mut">Create groups under Register players first.</span>`}</div></div>`:""}<h4>Games</h4>${statsTableHTML(u.stats)}<h4 style="margin-top:12px">Recent activity</h4>${actListHTML(A.act[u.id])}</td></tr>`;
     return row;
   }).join("")+`</tbody></table></div>`;
   return h+`</div>`;
