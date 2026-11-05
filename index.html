@@ -624,6 +624,11 @@
   @media(max-width:900px){.dr-grid{grid-template-columns:minmax(0,1fr)}}
   .dr-t input[type=text],.dr-t input[type=email]{padding:6px 8px;font-size:.85rem;min-width:140px}
   .dr-t td{vertical-align:middle}
+  .gm-pop{position:fixed;z-index:3000;max-height:260px;overflow-y:auto;padding:6px;background:#161a38;border:1px solid #8b93ff55;border-radius:14px;box-shadow:0 14px 36px #000a,0 0 0 1px #0006}
+  .gm-opt{padding:9px 12px;border-radius:9px;font-size:.88rem;color:#e8eaff;cursor:pointer;overflow-wrap:anywhere}
+  .gm-opt:hover{background:#6c74ff;color:#fff}
+  .gm-clr{color:#9aa0c8;border-bottom:1px solid #ffffff14;border-radius:9px 9px 0 0;margin-bottom:4px}
+  .gm-none{padding:10px 12px;font-size:.8rem;color:#9aa0c8}
   .dr-gs{display:flex;gap:8px;flex-wrap:wrap}.dr-gs label{display:flex;gap:4px;align-items:center;margin:0;font-size:.78rem;white-space:nowrap}
   .adm-tw{margin-top:10px}
   .adm-det .adm-tw{overflow-x:auto}
@@ -3242,17 +3247,43 @@ async function drawRegAdd(){
     await drawRegLoad();
   }catch(e){ toast(fbErrText(e),"err"); }
 }
-async function drawRegSave(i){
-  const c=DREG.members[i]; if(!c) return;
-  const r=drawReadPerson(S.ui["pn"+i]!==undefined?S.ui["pn"+i]:c.name, S.ui["pg"+i]!==undefined?S.ui["pg"+i]:pGmail(c), S.ui["pm"+i]!==undefined?S.ui["pm"+i]:c.gameMail);
-  if(r.err) return toast(r.err,"err");
-  const groups=[...document.querySelectorAll('[data-pgrp="'+i+'"]')].filter(el=>el.checked).map(el=>el.dataset.g);
+async function drawRegSaveAll(){                   // one button saves every row that changed
+  const jobs=[];
+  for(let i=0;i<DREG.members.length;i++){
+    const c=DREG.members[i], ui=k=>S.ui[k+i]!==undefined?S.ui[k+i]:null;
+    const r=drawReadPerson(ui("pn")!==null?ui("pn"):c.name, ui("pg")!==null?ui("pg"):pGmail(c), ui("pm")!==null?ui("pm"):c.gameMail);
+    if(r.err) return toast("Row "+(i+1)+" ("+(c.name||"?")+"): "+r.err,"err");
+    const groups=[...document.querySelectorAll('[data-pgrp="'+i+'"]')].filter(el=>el.checked).map(el=>el.dataset.g).sort();
+    const was=(c.groups||[DREG.sel]).slice().sort().join("|");
+    if(r.p.name!==(c.name||"")||r.p.gmail!==pGmail(c)||r.p.gameMail!==(c.gameMail||"").toLowerCase()||groups.join("|")!==was) jobs.push([c,r.p,groups]);
+  }
+  if(!jobs.length) return toast("Nothing changed.","info");
   try{
-    await drawPersonWrite(c,r.p,groups);
+    for(const j of jobs) await drawPersonWrite(j[0],j[1],j[2]);
     Object.keys(S.ui).filter(k=>/^p[ngm]\d+$/.test(k)).forEach(k=>delete S.ui[k]);
-    toast("Saved "+r.p.name+".","ok"); await drawRegLoad();
+    toast("Saved "+jobs.length+" change"+(jobs.length===1?"":"s")+".","ok"); await drawRegLoad();
   }catch(e){ toast(fbErrText(e),"err"); }
 }
+/* Game mail: a themed, searchable dropdown (replaces the browser's plain datalist) */
+const GMP={el:null,box:null};
+function gmClose(){ if(GMP.box){ GMP.box.remove(); GMP.box=null; } GMP.el=null; }
+function gmShow(el){
+  GMP.el=el; const q=el.value.trim().toLowerCase();
+  const opts=gameMailOptions().filter(o=>!q||o.includes(q));
+  if(!GMP.box){
+    GMP.box=document.createElement("div"); GMP.box.className="gm-pop";
+    GMP.box.addEventListener("mousedown",ev=>{ ev.preventDefault(); const o=ev.target.closest("[data-gmv]"); if(!o||!GMP.el) return;
+      GMP.el.value=o.dataset.gmv; if(GMP.el.id) S.ui[GMP.el.id]=o.dataset.gmv; gmClose(); });
+    document.body.appendChild(GMP.box);
+  }
+  const r=el.getBoundingClientRect(), w=Math.max(r.width,260);
+  Object.assign(GMP.box.style,{left:Math.min(r.left,innerWidth-w-8)+"px",top:(r.bottom+4)+"px",width:w+"px"});
+  GMP.box.innerHTML=`<div class="gm-opt gm-clr" data-gmv="">✕ No game mail yet</div>`+(opts.length?opts.map(o=>`<div class="gm-opt" data-gmv="${esc(o)}">${esc(o)}</div>`).join(""):`<div class="gm-none">No match – this email will be used as typed</div>`);
+}
+document.addEventListener("focusin",e=>{ const t=e.target; if(t.matches&&t.matches("[data-gm]")) gmShow(t); else gmClose(); });
+document.addEventListener("input",e=>{ const t=e.target; if(t.matches&&t.matches("[data-gm]")) gmShow(t); });
+document.addEventListener("focusout",e=>{ const t=e.target; if(t.matches&&t.matches("[data-gm]")) setTimeout(()=>{ if(document.activeElement!==t) gmClose(); },0); });
+window.addEventListener("scroll",e=>{ if(GMP.box&&!GMP.box.contains(e.target)) gmClose(); },true);
 async function drawRegDel(i){
   const c=DREG.members[i]; if(!c) return;
   try{ await drawPersonWrite(c,{name:c.name,gmail:pGmail(c),gameMail:(c.gameMail||"").toLowerCase()},(c.groups||[DREG.sel]).filter(g=>g!==DREG.sel)); await drawRegLoad(); }catch(e){ toast(fbErrText(e),"err"); }
@@ -3276,7 +3307,7 @@ function gameMailOptions(){                       // every invited / registered 
 function drawRegHTML(){
   let h=`<div class="dr-wrap"><div class="msg info">Stored in Firebase. Each person has a <b>Gmail</b> (where the draw result is e-mailed) and a <b>Game mail</b> (their GameHubVerse login – it decides which groups they see). Game mail can be left empty until they register; edit it later in the table. Only the master admin can change any of this.</div>`;
   if(DREG.err) h+=`<div class="msg err">${esc(DREG.err)}</div>`;
-  h+=`<datalist id="gmList">${gameMailOptions().map(e=>`<option value="${esc(e)}"></option>`).join("")}</datalist><div class="dr-grid"><div>`;
+  h+=`<div class="dr-grid"><div>`;
   // ---- left: groups + register form ----
   h+=`<div class="card2"><h3 style="margin-top:0">🏷 Groups</h3>
     <input type="text" id="drGid" data-keep maxlength="30" placeholder="New group ID, e.g. FAMILY" autocomplete="off" value="${esc(S.ui.drGid||"")}">
@@ -3285,23 +3316,23 @@ function drawRegHTML(){
   if(DREG.groups.length) h+=`<div class="card2" style="margin-top:14px"><h3 style="margin-top:0">➕ Register a person</h3>
       <input type="text" id="drName" data-keep placeholder="Name" autocomplete="off" value="${esc(S.ui.drName||"")}" style="margin-bottom:6px">
       <input type="email" id="drGmail" data-keep placeholder="Gmail (real email)" autocomplete="off" value="${esc(S.ui.drGmail||"")}" style="margin-bottom:6px">
-      <input type="email" id="drGame" data-keep list="gmList" placeholder="Game mail – pick or search (optional for now)" autocomplete="off" value="${esc(S.ui.drGame||"")}">
+      <input type="email" id="drGame" data-keep data-gm placeholder="Game mail – pick or search (optional for now)" autocomplete="off" value="${esc(S.ui.drGame||"")}">
       <div class="dr-gs" style="margin-top:8px">${DREG.groups.map(g=>`<label><input type="checkbox" data-dg="${esc(g)}" ${g===DREG.sel?"checked":""} style="width:auto"> ${esc(g)}</label>`).join("")}</div>
       <button class="btn green block" data-a="drAdd" style="margin-top:10px">➕ Register</button></div>`;
   h+=`</div><div>`;
   // ---- right: registered people table ----
   if(DREG.groups.length){
     h+=`<div class="card2"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0">👥 ${esc(DREG.sel||"")} (${DREG.members.length})${DREG.busy?" – loading…":""}</h3>
-      <button class="btn danger" data-a="drGroupDel" data-key="${esc(DREG.sel||"")}">🗑 Delete group</button></div>`;
+      <div style="display:flex;gap:8px"><button class="btn green" data-a="drSave">💾 Save changes</button><button class="btn danger" data-a="drGroupDel" data-key="${esc(DREG.sel||"")}">🗑 Delete group</button></div></div>`;
     if(!DREG.members.length&&!DREG.busy) h+=`<p class="mut">Nobody in this group yet.</p>`;
     else h+=`<div class="adm-tw" style="overflow-x:auto"><table class="adm-t dr-t"><thead><tr><th>#</th><th>Name</th><th>Gmail</th><th>Game mail</th><th>Groups</th><th></th></tr></thead><tbody>`+DREG.members.map((c,i)=>{
       const v=(k,d)=>esc(S.ui[k]!==undefined?S.ui[k]:d), gs=c.groups||[DREG.sel];
       return `<tr><td class="mut">${i+1}</td>
         <td><input type="text" id="pn${i}" data-keep placeholder="Name" value="${v("pn"+i,c.name||"")}"></td>
         <td><input type="email" id="pg${i}" data-keep placeholder="Gmail" value="${v("pg"+i,pGmail(c))}"></td>
-        <td><input type="email" id="pm${i}" data-keep list="gmList" placeholder="Pick or search" value="${v("pm"+i,c.gameMail||"")}"></td>
+        <td><input type="email" id="pm${i}" data-keep data-gm placeholder="Pick or search" value="${v("pm"+i,c.gameMail||"")}"></td>
         <td><div class="dr-gs">${DREG.groups.map(g=>`<label><input type="checkbox" data-pgrp="${i}" data-g="${esc(g)}" ${gs.includes(g)?"checked":""} style="width:auto"> ${esc(g)}</label>`).join("")}</div></td>
-        <td style="white-space:nowrap"><button class="btn green" data-a="drSave" data-i="${i}" title="Save">💾</button> <button class="btn secondary" data-a="drDel" data-i="${i}" title="Remove from ${esc(DREG.sel)}">🗑</button></td></tr>`;
+        <td style="white-space:nowrap"><button class="btn secondary" data-a="drDel" data-i="${i}" title="Remove from ${esc(DREG.sel)}">🗑</button></td></tr>`;
     }).join("")+`</tbody></table></div>`;
     h+=`</div>`;
   } else h+=`<div class="card2"><p class="mut" style="margin:0">Create a group on the left to start registering people.</p></div>`;
@@ -4494,7 +4525,7 @@ function onAppClick(e){
     case "goDrawReg": S.notice=null; S.screen="drawreg"; render(); drawRegLoad(); break;
     case "drAdd": drawRegAdd(); break;
     case "drDel": drawRegDel(+t.dataset.i); break;
-    case "drSave": drawRegSave(+t.dataset.i); break;
+    case "drSave": drawRegSaveAll(); break;
     case "drLoad": drawRegFill(t.dataset.g); break;
     case "drGroupAdd": drawGroupAdd(); break;
     case "drGroupDel": if(t.dataset.key) drawGroupDel(t.dataset.key); break;
