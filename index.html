@@ -107,12 +107,12 @@
   .game-btn b{font-size:1.1rem}
   .game-btn span.d{color:var(--muted);font-size:.88rem}
   .xm-row{display:grid;grid-template-columns:28px 1fr 1.3fr;gap:8px;align-items:center;margin-top:8px}
-  .xm-row .idx{color:var(--muted);text-align:center}
+  .xm-row .idx{color:var(--muted);text-align:center}.xm-row .idx input{margin:0}
   .xm-status{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
   details.cfg{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin:14px 0}
   details.cfg summary{cursor:pointer;font-weight:600}
   .pink{color:#ff4fa3;font-weight:700}
-  @media(max-width:600px){.xm-row{grid-template-columns:1fr}.xm-row .idx{display:none}}
+  @media(max-width:600px){.xm-row{grid-template-columns:28px 1fr}.xm-row .idx{grid-row:span 2}}
 
   /* Scribblio */
   .layout.wide main{max-width:1320px}
@@ -2984,9 +2984,15 @@ function rosterSave(game){
     localStorage.setItem(ROSTER_KEY,JSON.stringify(r));
   }catch(e){}
 }
-function xmFresh(){
+const rosterIncl=x=>[...Array(x.n).keys()].filter(i=>x.on[i]!==false);
+function rosterSummary(x){        // read-only review of who will get an email – shown before the Draw button
+  const idx=rosterIncl(x), left=x.n-idx.length;
+  const row=i=>`<div class="xm-status"><span>✅ <b>${esc((x.names[i]||"").trim()||"(no name)")}</b></span><span style="color:var(--muted)">${esc((x.emails[i]||"").trim()||"(no email)")}</span></div>`;
+  return `<div class="card2" style="margin-top:14px"><h3 style="margin:0 0 6px">📋 Players who will get an email (${idx.length} of ${x.n})</h3>${idx.length?idx.map(row).join(""):`<p class="mut" style="margin:0">Nobody is ticked.</p>`}${idx.length<2?`<div class="msg warn" style="margin-top:8px">Tick at least 2 players.</div>`:""}${left?`<p class="mut" style="margin:8px 0 0">${left} left out (unticked) – they won't be drawn or emailed.</p>`:""}</div>`;
+}
+function xmFresh(){ /* on[i]===false = player left out of the draw */
   const r=rosterGet("xm")||{};
-  return {step:"setup",n:r.n||3,names:(r.names||[]).slice(),emails:(r.emails||[]).slice(),assign:[],status:[],busy:false,err:null};
+  return {step:"setup",n:r.n||3,names:(r.names||[]).slice(),emails:(r.emails||[]).slice(),assign:[],status:[],busy:false,err:null,on:[]};
 }
 const XM_CFG_KEY="xm_emailjs";
 function xmCfg(){
@@ -3046,15 +3052,19 @@ async function xmRun(onlyFailed){
   x.busy=false; render();
 }
 async function xmDraw(){
-  const x=S.xm, {names,emails}=xmCollect();
+  const x=S.xm, all=xmCollect(), idx=[...Array(x.n).keys()].filter(i=>x.on[i]!==false);
+  const names=idx.map(i=>all.names[i]), emails=idx.map(i=>all.emails[i]);
   const fail=t=>{ S.notice={type:"err",text:t}; render(); };
-  if(x.n<2) return fail("You need at least 2 players.");
+  if(idx.length<2) return fail("Tick at least 2 players to include in the draw.");
   if(names.some(n=>!n)) return fail("Please enter a name for every player.");
   if(new Set(names.map(n=>n.toLowerCase())).size!==names.length) return fail("Player names must be unique.");
   if(emails.some(e=>!EMAIL_RE.test(e))) return fail("Please enter a valid email id for every player.");
   if(new Set(emails).size!==emails.length) return fail("Each player needs a different email id.");
   if(!emailCfgOk()) return fail("Please fill in all three EmailJS settings below.");
-  x.names=names; x.emails=emails; rosterSave("xm");
+  if(!confirm("Draw and send emails to "+names.length+" player"+(names.length===1?"":"s")+"?\n\n"+names.map((n,i)=>n+" – "+emails[i]).join("\n"))) return;
+  x.names=all.names; x.emails=all.emails; rosterSave("xm");
+  x.full={n:x.n,names:all.names,emails:all.emails,on:x.on.slice()};      // everyone, so "Start over" brings the ticks back
+  x.names=names; x.emails=emails; x.n=names.length; x.on=[];
   x.assign=derangement(x.n);
   x.status=names.map(()=> "pending");
   x.step="result"; S.notice=null;
@@ -3077,18 +3087,18 @@ function xmasHTML(){
   h+=`<label>Total number of players</label><input type="number" id="xmN" min="2" max="30" value="${x.n}" style="max-width:160px">`;
   h+=`<label style="margin-top:16px">Player names and email ids</label>`;
   for(let i=0;i<x.n;i++){
-    h+=`<div class="xm-row"><span class="idx">${i+1}</span>
+    h+=`<div class="xm-row"><span class="idx"><input type="checkbox" data-xon="${i}" ${x.on[i]!==false?"checked":""} title="Include in the draw" style="width:auto"></span>
       <input type="text" data-xn="${i}" placeholder="Name" value="${esc(x.names[i]||"")}" autocomplete="off">
       <input type="email" data-xe="${i}" placeholder="Email id" value="${esc(x.emails[i]||"")}" autocomplete="off"></div>`;
   }
-  h+=drawLoadBtn("xm");
+  h+=drawLoadBtn("xm")+rosterSummary(x);
   h+=cfgHTML();
-  h+=`<button class="btn green block" id="xmDraw" style="margin-top:8px">🎲 Draw &amp; send emails</button>`;
+  h+=`<button class="btn green block" id="xmDraw" style="margin-top:8px">🎲 Draw &amp; send emails to ${rosterIncl(x).length} player${rosterIncl(x).length===1?"":"s"}</button>`;
   return h;
 }
-function dwFresh(){
+function dwFresh(){ /* on[i]===false = player left out of the draw */
   const r=rosterGet("dw")||{};
-  return {step:"setup",n:r.n||3,names:(r.names||[]).slice(),emails:(r.emails||[]).slice(),assign:[],status:[],busy:false,err:null};
+  return {step:"setup",n:r.n||3,names:(r.names||[]).slice(),emails:(r.emails||[]).slice(),assign:[],status:[],busy:false,err:null,on:[]};
 }
 function dwCollect(){
   const x=S.dw, names=[], emails=[];
@@ -3115,15 +3125,19 @@ async function dwRun(onlyFailed){
   x.busy=false; render();
 }
 async function dwDraw(){
-  const x=S.dw, {names,emails}=dwCollect();
+  const x=S.dw, all=dwCollect(), idx=[...Array(x.n).keys()].filter(i=>x.on[i]!==false);
+  const names=idx.map(i=>all.names[i]), emails=idx.map(i=>all.emails[i]);
   const fail=t=>{ S.notice={type:"err",text:t}; render(); };
-  if(x.n<2) return fail("You need at least 2 players.");
+  if(idx.length<2) return fail("Tick at least 2 players to include in the draw.");
   if(names.some(n=>!n)) return fail("Please enter a name for every player.");
   if(new Set(names.map(n=>n.toLowerCase())).size!==names.length) return fail("Player names must be unique.");
   if(emails.some(e=>!EMAIL_RE.test(e))) return fail("Please enter a valid email id for every player.");
   if(new Set(emails).size!==emails.length) return fail("Each player needs a different email id.");
   if(!emailCfgOk()) return fail("Please fill in all three EmailJS settings below.");
-  x.names=names; x.emails=emails; rosterSave("dw");
+  if(!confirm("Draw and send emails to "+names.length+" player"+(names.length===1?"":"s")+"?\n\n"+names.map((n,i)=>n+" – "+emails[i]).join("\n"))) return;
+  x.names=all.names; x.emails=all.emails; rosterSave("dw");
+  x.full={n:x.n,names:all.names,emails:all.emails,on:x.on.slice()};      // everyone, so "Start over" brings the ticks back
+  x.names=names; x.emails=emails; x.n=names.length; x.on=[];
   x.assign=derangement(x.n);
   x.status=names.map(()=>"pending");
   x.step="result"; S.notice=null;
@@ -3145,13 +3159,13 @@ function dwHTML(){
   h+=`<label>Total number of players</label><input type="number" id="dwN" min="2" max="30" value="${x.n}" style="max-width:160px">`;
   h+=`<label style="margin-top:16px">Player names and email ids</label>`;
   for(let i=0;i<x.n;i++){
-    h+=`<div class="xm-row"><span class="idx">${i+1}</span>
+    h+=`<div class="xm-row"><span class="idx"><input type="checkbox" data-don="${i}" ${x.on[i]!==false?"checked":""} title="Include in the draw" style="width:auto"></span>
       <input type="text" data-dn="${i}" placeholder="Name" value="${esc(x.names[i]||"")}" autocomplete="off">
       <input type="email" data-de="${i}" placeholder="Email id" value="${esc(x.emails[i]||"")}" autocomplete="off"></div>`;
   }
-  h+=drawLoadBtn("dw");
+  h+=drawLoadBtn("dw")+rosterSummary(x);
   h+=cfgHTML();
-  h+=`<button class="btn green block" id="dwDraw" style="margin-top:8px">🎲 Draw &amp; send emails</button>`;
+  h+=`<button class="btn green block" id="dwDraw" style="margin-top:8px">🎲 Draw &amp; send emails to ${rosterIncl(x).length} player${rosterIncl(x).length===1?"":"s"}</button>`;
   return h;
 }
 
@@ -3297,7 +3311,7 @@ async function drawRegFill(g){
     list=s.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>(a.name||"").localeCompare(b.name||"")).slice(0,30); }
   catch(e){ return toast(fbErrText(e),"err"); }
   if(!list.length) return toast("Nobody is registered in "+grp+" yet.","err");
-  const x=S[g]; x.n=Math.max(2,list.length); x.names=list.map(c=>c.name); x.emails=list.map(pGmail);   // the draw result goes to their Gmail
+  const x=S[g]; x.on=[]; x.n=Math.max(2,list.length); x.names=list.map(c=>c.name); x.emails=list.map(pGmail);   // the draw result goes to their Gmail
   rosterSave(g); S.notice=null; render();
   toast("Loaded "+list.length+" player"+(list.length===1?"":"s")+" from "+grp+".","ok");
 }
@@ -3374,9 +3388,6 @@ function landingHTML(){
     <button class="game-btn" style="--glow:#5ee08a" data-a="goXmas"><span class="ico">🎄</span><b>ChristMom ChristChild</b><span class="d">Secretly match everyone with a Christ Child by email.</span></button>
     <button class="game-btn" style="--glow:#ff9a3c" data-a="goDiwali"><span class="ico">🪔</span><b>Diwali Daddy Diwali Kid</b><span class="d">Secretly match everyone with a Diwali Kid by email.</span></button>
   </div>
-  ${FB_ON&&fbIsMaster()?`<div class="game-grid" style="margin-top:14px;grid-template-columns:minmax(0,1fr)">
-    <button class="game-btn wide" style="--glow:#b48cff" data-a="goDrawReg"><span class="ico">📇</span><b>Register players &amp; groups</b><span class="d">Master admin only: create group IDs and save names &amp; emails (stored in Firebase) for the email draws.</span></button>
-  </div>`:""}
   <h3 class="home-h" style="margin-top:34px">No signal?</h3><div class="game-grid">
     <button class="game-btn" style="--glow:#46d6a4" data-a="goOffline"><span class="ico">📴</span><b>Offline mode</b><span class="d">See which games and features work without an internet connection – and play them.</span></button>
   </div>`;
@@ -3903,7 +3914,6 @@ function mainHTML(){
   switch(S.screen){
     case "admin": return AUTH.isAdmin?topbar("🛡 Admin – people & activity",true)+adminHTML():landingHTML();
     case "mystats": return topbar("📊 My activity",true)+myStatsHTML();
-    case "drawreg": return fbIsMaster()?topbar("📇 Register players",true)+drawRegHTML():landingHTML();
     case "xmas": return topbar("🎄 ChristMom ChristChild",true)+xmasHTML();
     case "diwali": return topbar("🪔 Diwali Daddy Diwali Kid",true)+dwHTML();
     case "entry": return entryHTML();
@@ -4469,7 +4479,7 @@ function bind(){
     S.dw.n=Math.min(30,Math.max(2,parseInt(e.target.value)||2)); rosterSave("dw"); render(); });
   $("dwDraw")&&($("dwDraw").onclick=dwDraw);
   $("dwRetry")&&($("dwRetry").onclick=()=>dwRun(true));
-  $("dwReset")&&($("dwReset").onclick=()=>{ const o=S.dw; S.dw=Object.assign(dwFresh(),{n:o.n,names:o.names.slice(),emails:o.emails.slice()}); rosterSave("dw"); S.notice=null; render(); });
+  $("dwReset")&&($("dwReset").onclick=()=>{ const o=S.dw.full||S.dw; S.dw=Object.assign(dwFresh(),{n:o.n,names:o.names.slice(),emails:o.emails.slice(),on:(o.on||[]).slice()}); rosterSave("dw"); S.notice=null; render(); });
   document.querySelectorAll("[data-dn]").forEach(el=>el.oninput=e=>{ S.dw.names[+el.dataset.dn]=e.target.value; rosterSave("dw"); });
   document.querySelectorAll("[data-de]").forEach(el=>el.oninput=e=>{ S.dw.emails[+el.dataset.de]=e.target.value; rosterSave("dw"); });
   // christmom
@@ -4477,7 +4487,9 @@ function bind(){
     S.xm.n=Math.min(30,Math.max(2,parseInt(e.target.value)||2)); rosterSave("xm"); render(); });
   $("xmDraw")&&($("xmDraw").onclick=xmDraw);
   $("xmRetry")&&($("xmRetry").onclick=()=>xmRun(true));
-  $("xmReset")&&($("xmReset").onclick=()=>{ const o=S.xm; S.xm=Object.assign(xmFresh(),{n:o.n,names:o.names.slice(),emails:o.emails.slice()}); rosterSave("xm"); S.notice=null; render(); });
+  $("xmReset")&&($("xmReset").onclick=()=>{ const o=S.xm.full||S.xm; S.xm=Object.assign(xmFresh(),{n:o.n,names:o.names.slice(),emails:o.emails.slice(),on:(o.on||[]).slice()}); rosterSave("xm"); S.notice=null; render(); });
+  document.querySelectorAll("[data-xon]").forEach(el=>el.onchange=e=>{ const c=xmCollect(); S.xm.names=c.names; S.xm.emails=c.emails; S.xm.on[+el.dataset.xon]=e.target.checked; render(); });
+  document.querySelectorAll("[data-don]").forEach(el=>el.onchange=e=>{ const c=dwCollect(); S.dw.names=c.names; S.dw.emails=c.emails; S.dw.on[+el.dataset.don]=e.target.checked; render(); });
   document.querySelectorAll("[data-xn]").forEach(el=>el.oninput=e=>{ S.xm.names[+el.dataset.xn]=e.target.value; rosterSave("xm"); });
   document.querySelectorAll("[data-xe]").forEach(el=>el.oninput=e=>{ S.xm.emails[+el.dataset.xe]=e.target.value; rosterSave("xm"); });
   // number game personal colour panel
@@ -4525,7 +4537,7 @@ function onAppClick(e){
     case "admCopy": try{ navigator.clipboard.writeText("You're invited to Game Hub: "+admLink()+" – choose Register and use "+t.dataset.key); toast("Invite message copied – paste it to them.","ok"); }catch(x){ toast(admLink(),"info"); } break;
     case "go": S.notice=null; S.game=t.dataset.g; S.screen="entry"; render(); break;
     case "goJoin": S.notice=null; S.game=null; S.screen="entry"; render(); break;
-    case "goDrawReg": S.notice=null; S.screen="drawreg"; render(); drawRegLoad(); break;
+    case "admTab": S.admTab=t.dataset.t; render(); if(S.admTab==="settings"&&fbIsMaster()) drawRegLoad(); break;
     case "drAdd": drawRegAdd(); break;
     case "drDel": drawRegDel(+t.dataset.i); break;
     case "drSave": drawRegSaveAll(); break;
@@ -5383,14 +5395,17 @@ function adminHTML(){
   const top=Object.keys(games).sort((a,b)=>games[b]-games[a])[0];
   let h=A.err?`<div class="msg err">${esc(A.err)} – have you published firestore.rules?</div>`:"";
   if(S.busy) h+=`<div class="msg info">⏳ ${esc(S.busy)}</div>`;
-  h+=`<div class="adm-cards">${card("Active accounts",all.filter(u=>u.role!=="admin").length)}${card("Invited, not registered",A.invites.filter(i=>i.status==="invited"&&!all.some(u=>u.email===i.id)).length)}${card("Online now",all.filter(fbOnline).length)}${card("Active last 7 days",all.filter(u=>now-fbMs(u.lastLoginAt)<6048e5).length)}${card("Games played",all.reduce((a,u)=>a+(u.gamesPlayed||0),0))}${card("Total play time",fbDur(all.reduce((a,u)=>a+(u.totalSeconds||0),0)))}${card("Most played",top?esc(gameLabel(top)):"–")}</div>`;
-  h+=`<div class="card2"><h3>✉️ Invite someone</h3><p class="mut" style="margin:0 0 8px">Only invited e-mails can register. Add the address here, then send them the site link.</p>
+  const settings=S.admTab==="settings";
+  h+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"><button class="btn ${settings?"secondary":""}" data-a="admTab" data-t="people">👥 People &amp; activity</button><button class="btn ${settings?"":"secondary"}" data-a="admTab" data-t="settings">⚙️ UserSettings</button></div>`;
+  const invite=`<div class="card2"><h3>✉️ Invite someone</h3><p class="mut" style="margin:0 0 8px">Only invited e-mails can register. Add the address here, then send them the site link.</p>
     <div class="row"><div><label>E-mail</label><input type="email" id="admEmail" data-keep autocomplete="off" placeholder="friend@example.com" value="${esc(S.ui.admEmail||"")}"></div>
     <div><label>Name (optional)</label><input type="text" id="admName" data-keep autocomplete="off" maxlength="30" value="${esc(S.ui.admName||"")}"></div></div>
     <button class="btn green" style="margin-top:10px" data-a="admInvite">Send invite</button></div>`;
+  if(settings) return h+invite+`<h3 class="home-h" style="margin-top:26px">📇 Register players &amp; groups (for the email draws)</h3>`+(fbIsMaster()?drawRegHTML():`<div class="msg info">Registering players and groups is for the master admin only.</div>`);
+  h+=`<div class="adm-cards">${card("Active accounts",all.filter(u=>u.role!=="admin").length)}${card("Invited, not registered",A.invites.filter(i=>i.status==="invited"&&!all.some(u=>u.email===i.id)).length)}${card("Online now",all.filter(fbOnline).length)}${card("Active last 7 days",all.filter(u=>now-fbMs(u.lastLoginAt)<6048e5).length)}${card("Games played",all.reduce((a,u)=>a+(u.gamesPlayed||0),0))}${card("Total play time",fbDur(all.reduce((a,u)=>a+(u.totalSeconds||0),0)))}${card("Most played",top?esc(gameLabel(top)):"–")}</div>`;
   h+=`<div class="card2" style="margin-top:14px"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between"><h3 style="margin:0">👥 People (${rows.length})</h3>
     <input type="text" id="admQ" data-keep autocomplete="off" placeholder="Search name or e-mail" style="max-width:260px" value="${esc(S.ui.admQ||"")}"></div>`;
-  if(!rows.length) h+=`<p class="mut">Nobody yet – invite someone above.</p>`;
+  if(!rows.length) h+=`<p class="mut">Nobody yet – invite someone under UserSettings.</p>`;
   else h+=`<div class="adm-tw"><table class="adm-t adm-people"><thead><tr><th>Person</th><th>Status</th><th>Last sign-in</th><th>Sign-ins</th><th>Games</th><th>Device</th><th>Game view</th><th></th></tr></thead><tbody>`+rows.map(r=>{
     const u=r.u, open=A.open===r.email, st=r.status==="active"?(fbOnline(u)?`<span class="adm-pill on">● online</span>`:`<span class="adm-pill ok">active</span>`):r.status==="invited"?`<span class="adm-pill wait">invited</span>`:`<span class="adm-pill off">removed</span>`;
     const isAdm=!!(u&&u.role==="admin"), me=u&&AUTH.user&&u.id===AUTH.user.uid, isMst=r.email===MASTER_EMAIL, iAmMst=fbIsMaster();
