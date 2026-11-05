@@ -620,7 +620,8 @@
   .adm-card{background:#ffffff0d;border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:2px}
   .adm-card b{font-size:1.35rem}.adm-card span{font-size:.78rem;color:var(--muted)}
   .dr-wrap{width:min(1300px,calc(100vw - 32px));position:relative;left:50%;transform:translateX(-50%)}
-  .dr-grid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:14px;align-items:start}
+  .dr-grid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:14px;align-items:stretch}
+  .dr-grid>div{display:flex;flex-direction:column}.dr-grid>div>.card2:last-child{flex:1}
   @media(max-width:900px){.dr-grid{grid-template-columns:minmax(0,1fr)}}
   .dr-t input[type=text],.dr-t input[type=email]{padding:6px 8px;font-size:.85rem;min-width:140px}
   .dr-t td{vertical-align:middle}
