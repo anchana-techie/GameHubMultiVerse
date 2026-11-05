@@ -3259,9 +3259,10 @@ async function drawRegAdd(){
   if(!gs.length) return toast("Tick at least one group.","err");
   try{
     // if this Gmail is already registered, keep their other groups too
-    const have=(await Promise.all(DREG.groups.map(g=>FBD.collection("drawGroups").doc(g).collection("members").doc(pIdOf(r.p)).get()))).map((d,i)=>d.exists?DREG.groups[i]:null).filter(Boolean);
+    const docs=await Promise.all(DREG.groups.map(g=>FBD.collection("drawGroups").doc(g).collection("members").doc(pIdOf(r.p)).get()));
+    const have=docs.map((d,i)=>d.exists?DREG.groups[i]:null).filter(Boolean), prev=docs.find(d=>d.exists);
     const all=[...new Set([...have,...gs])];
-    await drawPersonWrite(null,r.p,all);
+    await drawPersonWrite(prev?Object.assign({id:prev.id},prev.data()):null,r.p,all);      // passing the previous record cleans up an old Game mail link
     S.ui.drName=""; S.ui.drGmail=""; S.ui.drGame=""; toast("Saved "+r.p.name+" in "+all.join(", ")+".","ok");
     await drawRegLoad();
   }catch(e){ toast(fbErrText(e),"err"); }
@@ -3305,6 +3306,26 @@ document.addEventListener("focusin",e=>{ const t=e.target; if(t.matches&&t.match
 document.addEventListener("input",e=>{ const t=e.target; if(t.matches&&t.matches("[data-gm]")) gmShow(t); });
 document.addEventListener("focusout",e=>{ const t=e.target; if(t.matches&&t.matches("[data-gm]")) setTimeout(()=>{ if(document.activeElement!==t) gmClose(); },0); });
 window.addEventListener("scroll",e=>{ if(GMP.box&&!GMP.box.contains(e.target)) gmClose(); },true);
+async function drawGroupRename(old){            // master only (the whole screen is master only, and so are the rules)
+  const nu=String(prompt("New name for group "+old+":",old)||"").trim().toUpperCase();
+  if(!nu||nu===old) return;
+  if(!gidOk(nu)) return toast("Group ID: letters, numbers, space, - or _ (max 30).","err");
+  if(DREG.groups.includes(nu)) return toast("A group called "+nu+" already exists.","err");
+  const FV=firebase.firestore.FieldValue, col=g=>FBD.collection("drawGroups").doc(g);
+  try{
+    const ms=await col(old).collection("members").get();
+    await col(nu).set({createdAt:fbNow()},{merge:true});
+    for(const d of ms.docs){
+      const m=d.data(), gs=(m.groups||[old]).map(g=>g===old?nu:g);
+      await col(nu).collection("members").doc(d.id).set(Object.assign({},m,{groups:gs}));
+      for(const g of gs) if(g!==nu) await col(g).collection("members").doc(d.id).update({groups:gs}).catch(()=>{});   // same person in other groups
+      const gm=(m.gameMail||"").toLowerCase();
+      if(gm){ await FBD.collection("gameMailGroups").doc(gm).set({groups:FV.arrayUnion(nu)},{merge:true}); await FBD.collection("gameMailGroups").doc(gm).update({groups:FV.arrayRemove(old)}); }
+      await d.ref.delete();
+    }
+    await col(old).delete(); DREG.sel=nu; toast("Renamed to "+nu+".","ok"); await drawRegLoad();
+  }catch(e){ toast(fbErrText(e),"err"); }
+}
 async function drawRegDel(i){
   const c=DREG.members[i]; if(!c) return;
   try{ await drawPersonWrite(c,{name:c.name,gmail:pGmail(c),gameMail:(c.gameMail||"").toLowerCase()},(c.groups||[DREG.sel]).filter(g=>g!==DREG.sel)); await drawRegLoad(); }catch(e){ toast(fbErrText(e),"err"); }
@@ -3345,7 +3366,7 @@ function drawRegHTML(){
   // ---- right: registered people table ----
   if(DREG.groups.length){
     h+=`<div class="card2"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0">👥 ${esc(DREG.sel||"")} (${DREG.members.length})${DREG.busy?" – loading…":""}</h3>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">${DREG.edit?`<button class="btn green" data-a="drSave">💾 Save changes</button><button class="btn secondary" data-a="drCancel">✖ Cancel</button>`:`<button class="btn" data-a="drEdit">✏️ Edit</button>`}<button class="btn danger" data-a="drGroupDel" data-key="${esc(DREG.sel||"")}">🗑 Delete group</button></div></div>`;
+      <div style="display:flex;gap:8px;flex-wrap:wrap">${DREG.edit?`<button class="btn green" data-a="drSave">💾 Save changes</button><button class="btn secondary" data-a="drCancel">✖ Cancel</button>`:`<button class="btn" data-a="drEdit">✏️ Edit</button><button class="btn secondary" data-a="drRename" data-key="${esc(DREG.sel||"")}">🏷 Rename group</button>`}<button class="btn danger" data-a="drGroupDel" data-key="${esc(DREG.sel||"")}">🗑 Delete group</button></div></div>`;
     if(!DREG.members.length&&!DREG.busy) h+=`<p class="mut">Nobody in this group yet.</p>`;
     else h+=`<div class="adm-tw" style="overflow-x:auto"><table class="adm-t dr-t"><thead><tr><th>#</th><th>Name</th><th>Gmail</th><th>Game mail</th><th>Groups</th><th></th></tr></thead><tbody>`+DREG.members.map((c,i)=>{
       const v=(k,d)=>esc(S.ui[k]!==undefined?S.ui[k]:d), gs=c.groups||[DREG.sel];
@@ -4552,6 +4573,7 @@ function onAppClick(e){
     case "drGroupAdd": drawGroupAdd(); break;
     case "drGroupDel": if(t.dataset.key) drawGroupDel(t.dataset.key); break;
     case "drSel": drawEditOff(); DREG.sel=t.dataset.key; drawRegLoad(); break;
+    case "drRename": if(t.dataset.key) drawGroupRename(t.dataset.key); break;
     case "drEdit": DREG.edit=true; render(); break;
     case "drCancel": drawEditOff(); render(); break;
     case "goXmas": S.notice=null; S.screen="xmas"; render(); drawGroupsLoad(); break;
