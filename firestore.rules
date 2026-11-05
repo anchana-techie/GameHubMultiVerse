@@ -10,9 +10,8 @@ service cloud.firestore {
     function profile(uid) { return get(/databases/$(database)/documents/users/$(uid)).data; }
     function isAdmin()  { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && profile(request.auth.uid).role == 'admin'; }
     function isMaster() { return signedIn() && mail() == 'admin@gamehubverse.com'; }
-    function myGroups() { return exists(/databases/$(database)/documents/users/$(request.auth.uid)) ? profile(request.auth.uid).get('groups', []) : []; }
-    // Group IDs on a profile may only be changed by the master.
-    function sameGroups() { return request.resource.data.get('groups', []) == resource.data.get('groups', []); }
+    // Groups a login belongs to: gameMailGroups/{login e-mail}.groups, written only by the master.
+    function myGroups() { return exists(/databases/$(database)/documents/gameMailGroups/$(mail())) ? get(/databases/$(database)/documents/gameMailGroups/$(mail())).data.groups : []; }
     function inviteOf(e) { return get(/databases/$(database)/documents/invites/$(e)).data; }
 
     // Invites: the admin manages them. Anyone may look up ONE invite by e-mail (needed to check an address before registering).
@@ -27,8 +26,14 @@ service cloud.firestore {
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'uid', 'registeredAt', 'name']));
     }
 
-    // Email-draw groups. Only the master creates groups and registers people (names + e-mails) in them.
-    // A signed-in user can read a group's people ONLY if the master put that group ID in their own profile (users/{uid}.groups).
+    // Which groups a login e-mail (the "Game mail") belongs to. Readable by that login and the master; written by the master.
+    match /gameMailGroups/{gm} {
+      allow read: if isMaster() || (signedIn() && gm == mail());
+      allow write: if isMaster();
+    }
+
+    // Email-draw groups. Only the master creates groups and registers people (name, Gmail, Game mail) in them.
+    // A signed-in user can read a group's people ONLY if their login e-mail is linked to that group in gameMailGroups.
     match /drawGroups/{gid} {
       allow read: if isMaster() || (signedIn() && gid in myGroups());
       allow write: if isMaster();
@@ -53,10 +58,9 @@ service cloud.firestore {
         && request.resource.data.role == 'user'
         && inviteOf(mail()).status == 'invited';
       allow update: if isMaster()
-        || (isAdmin() && request.resource.data.role == resource.data.role && sameGroups())
+        || (isAdmin() && request.resource.data.role == resource.data.role)
         || (signedIn() && request.auth.uid == uid
             && request.resource.data.role == resource.data.role
-            && sameGroups()
             && request.resource.data.email == resource.data.email);
       allow delete: if isMaster() || (isAdmin() && resource.data.role != 'admin');
 
