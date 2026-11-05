@@ -3323,7 +3323,7 @@ function gameMailOptions(){                       // every invited / registered 
   return [...set].sort();
 }
 function drawRegHTML(){
-  let h=`<div class="dr-wrap"><div class="msg info">Stored in Firebase. Each person has a <b>Gmail</b> (where the draw result is e-mailed) and a <b>Game mail</b> (their GameHubVerse login – it decides which groups they see). Game mail can be left empty until they register; edit it later in the table. Only the master admin can change any of this.</div>`;
+  let h=`<div class="dr-wrap">`;
   if(DREG.err) h+=`<div class="msg err">${esc(DREG.err)}</div>`;
   h+=`<div class="dr-grid"><div>`;
   // ---- left: groups + register form ----
