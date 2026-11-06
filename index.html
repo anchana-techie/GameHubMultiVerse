@@ -615,7 +615,11 @@
   .db-roll{font-size:1.15rem;padding:14px}
   /* ludo */
   /* accounts + admin */
-  .acct-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;margin-bottom:6px}
+  .acct-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;margin-bottom:10px}
+  .acct-bar .chip,.acct-bar .btn{box-sizing:border-box;height:38px;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 14px;font-size:.9rem;line-height:1;white-space:nowrap;border-radius:999px;margin:0}
+  .acct-bar .chip{font-weight:600}
+  .acct-bar .chip[title]{max-width:min(46vw,360px);overflow:hidden;text-overflow:ellipsis;display:inline-block;line-height:36px}
+  @media(max-width:600px){.acct-bar{justify-content:center}}
   .adm-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}
   .adm-card{background:#ffffff0d;border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:2px}
   .adm-card b{font-size:1.35rem}.adm-card span{font-size:.78rem;color:var(--muted)}
