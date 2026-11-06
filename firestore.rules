@@ -44,7 +44,7 @@ service cloud.firestore {
       // Presence: each person keeps their own doc fresh; everyone in the group can read them.
       match /presence/{gm} {
         allow read: if isMaster() || (signedIn() && gid in myGroups());
-        allow write: if signedIn() && gm == mail() && gid in myGroups();
+        allow write: if isMaster() || (signedIn() && gm == mail() && gid in myGroups());
       }
     }
 

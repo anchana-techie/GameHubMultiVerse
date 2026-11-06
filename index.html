@@ -3445,20 +3445,22 @@ function prRender(){
   const me=AUTH.user.email.toLowerCase(), now=Date.now(), people=new Map();
   Object.keys(PR.members).forEach(g=>(PR.members[g]||[]).forEach(m=>{
     const gm=(m.gameMail||"").toLowerCase(); if(gm&&gm===me) return;
-    const id=gm||("x:"+m.id), cur=people.get(id)||{name:m.name||gm,gm,groups:[]};
+    const id=gm||("x:"+m.id), cur=people.get(id)||{name:m.name||gm,gm,groups:[],rem:0};
+    cur.rem=Math.max(cur.rem,fbMs(m.removedAt));          // set by the master when the account was removed
     if(!cur.groups.includes(g)) cur.groups.push(g); people.set(id,cur);
   }));
   const list=[...people.values()].map(p=>{
     let best=null; p.groups.forEach(g=>{ const d=p.gm&&PR.pres[g]&&PR.pres[g][p.gm]; if(d&&(!best||fbMs(d.lastSeen)>fbMs(best.lastSeen))) best=d; });
     const ms=best?fbMs(best.lastSeen):0;
     return Object.assign(p,{ms,joined:!!best,on:!!(best&&best.online&&now-ms<150000)});
-  }).sort((a,b)=>(b.on-a.on)||(b.joined-a.joined)||(b.ms-a.ms)||String(a.name).localeCompare(String(b.name)));
+  }).filter(p=>!p.rem||p.ms>p.rem)       // a removed account stays hidden unless they register again and show new activity
+  .sort((a,b)=>(b.on-a.on)||(b.joined-a.joined)||(b.ms-a.ms)||String(a.name).localeCompare(String(b.name)));
   const online=list.filter(p=>p.on).length;
   const row=p=>`<div class="pr-row"><span class="pr-dot ${p.on?"on":p.joined?"off":"none"}"></span><div class="pr-main"><b>${esc(p.name)}</b>
     <span class="pr-st">${p.on?"online":p.joined?"last seen "+fbAgo(p.ms):"not joined yet"}</span></div><div class="pr-tags">${p.groups.map(g=>`<span class="pr-tag">${esc(g)}</span>`).join("")}</div></div>`;
   el.innerHTML=(PR.open?`<div class="pr-panel"><div class="pr-head"><b>👥 My groups</b><span class="pr-st">${online} online · ${list.length} people</span></div>
       ${PR.err?`<div class="pr-st" style="padding:8px 14px;color:#ffb4b4">⚠ Couldn't read live status (${esc(PR.err)}) – publish the latest firestore.rules in Firebase.</div>`:""}<div class="pr-list">${list.length?list.map(row).join(""):`<p class="pr-st" style="padding:10px">Nobody else is registered in your groups yet.</p>`}</div></div>`:"")
-    +`<button class="pr-fab" data-prt title="People in my groups">👥${online?`<span class="pr-badge">${online}</span>`:""}</button>`;
+    +`<button class="pr-fab" data-prt title="People in my groups"><svg viewBox="0 0 24 24" width="26" height="26" fill="#fff" aria-hidden="true"><path d="M16 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM8 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05A4.2 4.2 0 0 1 17 16.5V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>${online?`<span class="pr-badge">${online}</span>`:""}</button>`;
 }
 document.addEventListener("visibilitychange",()=>prBeat(document.visibilityState==="visible"));
 window.addEventListener("pagehide",()=>prBeat(false));
@@ -5417,6 +5419,16 @@ async function admRemove(email){
       for(let i=0;i<acts.docs.length;i+=400){ const b=FBD.batch(); acts.docs.slice(i,i+400).forEach(d=>b.delete(d.ref)); await b.commit(); }
       await FBD.collection("users").doc(u.id).delete();
       await FBD.collection("recovery").doc(email).delete().catch(()=>{});
+      if(fbIsMaster()){                       // drop their group presence and mark them removed so the groups' "My groups" panels stop showing them
+        try{
+          const gs=(await FBD.collection("drawGroups").get()).docs.map(d=>d.id);
+          for(const g of gs){
+            await FBD.collection("drawGroups").doc(g).collection("presence").doc(email.toLowerCase()).delete().catch(()=>{});
+            const ms=await FBD.collection("drawGroups").doc(g).collection("members").where("gameMail","==",email.toLowerCase()).get();
+            for(const d of ms.docs) await d.ref.update({removedAt:fbNow()});
+          }
+        }catch(e){ console.warn("group cleanup failed",e); }
+      }
       await FBD.collection("invites").doc(email).set({email,name:u.name||"",status:"removed",removedAt:fbNow(),invitedBy:AUTH.user.email},{merge:true});
     } else await FBD.collection("invites").doc(email).delete();
     toast(u?"Account removed – they can't sign in any more.":"Invite revoked.","ok");
