@@ -615,11 +615,13 @@
   .db-roll{font-size:1.15rem;padding:14px}
   /* ludo */
   /* accounts + admin */
-  .acct-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;margin-bottom:10px}
+  .acct-bar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between;width:100%;box-sizing:border-box;margin:0 0 14px;padding:10px 14px;background:var(--panel);border:1px solid var(--border);border-radius:16px;backdrop-filter:blur(6px)}
+  .acct-bar .ab-l,.acct-bar .ab-r{display:flex;gap:8px;flex-wrap:wrap;align-items:center;min-width:0}
+  .acct-bar .ab-r{margin-left:auto;justify-content:flex-end}
   .acct-bar .chip,.acct-bar .btn{box-sizing:border-box;height:38px;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 14px;font-size:.9rem;line-height:1;white-space:nowrap;border-radius:999px;margin:0}
   .acct-bar .chip{font-weight:600}
-  .acct-bar .chip[title]{max-width:min(46vw,360px);overflow:hidden;text-overflow:ellipsis;display:inline-block;line-height:36px}
-  @media(max-width:600px){.acct-bar{justify-content:center}}
+  .acct-bar .chip[title]{max-width:min(46vw,420px);overflow:hidden;text-overflow:ellipsis;display:inline-block;line-height:36px}
+  @media(max-width:600px){.acct-bar{justify-content:center}.acct-bar .ab-l,.acct-bar .ab-r{justify-content:center;margin:0}}
   .adm-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}
   .adm-card{background:#ffffff0d;border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:2px}
   .adm-card b{font-size:1.35rem}.adm-card span{font-size:.78rem;color:var(--muted)}
@@ -5491,8 +5493,8 @@ function acctBarHTML(){
   if(AUTH.state==="offline") return `<div class="msg warn">📴 Signed-out offline mode – accounts need an internet connection. The offline games below still work.</div>`;
   if(AUTH.state!=="in") return "";
   const p=AUTH.profile||{};
-  return `<div class="acct-bar"><span class="chip">👤 ${esc(p.name||AUTH.user.email)}${AUTH.isAdmin?(fbIsMaster()?" · 👑 Master admin":" · 🛡 Admin"):""}</span>${(AUTH.groups&&AUTH.groups.length)?`<span class="chip" title="Your group IDs">🏷 ${AUTH.groups.map(esc).join(", ")}</span>`:""}
-    <button class="btn secondary" data-a="goMyStats">📊 My activity</button>${AUTH.isAdmin?`<button class="btn secondary" data-a="goAdmin">🛡 Admin</button>`:""}<button class="btn secondary" data-a="authLogout">Sign out</button></div>`;
+  return `<div class="acct-bar"><div class="ab-l"><span class="chip">👤 ${esc(p.name||AUTH.user.email)}${AUTH.isAdmin?(fbIsMaster()?" · 👑 Master admin":" · 🛡 Admin"):""}</span>${(AUTH.groups&&AUTH.groups.length)?`<span class="chip" title="Your group IDs">🏷 ${AUTH.groups.map(esc).join(", ")}</span>`:""}</div><div class="ab-r">
+    <button class="btn secondary" data-a="goMyStats">📊 My activity</button>${AUTH.isAdmin?`<button class="btn secondary" data-a="goAdmin">🛡 Admin</button>`:""}<button class="btn secondary" data-a="authLogout">Sign out</button></div></div>`;
 }
 const gameLabel=g=>GTITLE[g]||g;
 function statsTableHTML(stats){
