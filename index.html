@@ -5209,7 +5209,7 @@ async function fbReject(u,why){
   try{ await u.delete(); }catch(e){ try{ await FBA.signOut(); }catch(x){} }
 }
 async function fbOnUser(u){
-  if(!u){ fbStop(); AUTH.groups=[]; AUTH.user=null; AUTH.profile=null; AUTH.isAdmin=false; AUTH.state="out"; AUTH.busy=false; render(); return; }
+  if(!u){ if(AUTH.state==="in") console.warn("[auth] signed out (state was \"in\") – "+(AUTH.err||"no error recorded")); fbStop(); AUTH.groups=[]; AUTH.user=null; AUTH.profile=null; AUTH.isAdmin=false; AUTH.state="out"; AUTH.busy=false; render(); return; }
   AUTH.user=u; AUTH.isAdmin=false;
   AUTH.state="loading"; render();
   try{
@@ -5246,7 +5246,11 @@ function fbStart(u,ref){
   fbStop();
   try{ AUTH.unGrp=FBD.collection("gameMailGroups").doc(u.email.toLowerCase()).onSnapshot(d=>{ AUTH.groups=d.exists?(d.data().groups||[]):[]; render(); prSync(); },()=>{}); }catch(e){}   // live: group changes by the master show up without re-login
   AUTH.unSelf=ref.onSnapshot(s=>{
-    if(!s.exists&&AUTH.state==="in"&&!AUTH.isAdmin&&!s.metadata.fromCache){ AUTH.err="Your account was removed by the admin."; u.delete().catch(()=>{}); FBA.signOut().catch(()=>{}); }
+    if(!s.exists&&AUTH.state==="in"&&!AUTH.isAdmin&&!fbIsMaster()&&!s.metadata.fromCache){          // admins (and the master) are never signed out by this
+      // double-check on the server, so a stray/transient empty snapshot can never sign anyone out
+      ref.get({source:"server"}).then(d=>{ if(d.exists||AUTH.state!=="in"||AUTH.isAdmin||fbIsMaster()) return;
+        console.warn("[auth] own profile is gone – signing out"); AUTH.err="Your account was removed by the admin."; u.delete().catch(()=>{}); FBA.signOut().catch(()=>{}); }).catch(()=>{});
+    }
     else if(s.exists){ AUTH.profile=s.data(); const a=AUTH.profile.role==="admin"; if(a!==AUTH.isAdmin){ AUTH.isAdmin=a; render(); } }
   },()=>{});
   AUTH.hb=setInterval(()=>{ if(document.visibilityState==="visible") ref.update({lastSeen:fbNow(),online:true}).catch(()=>{}); },60000);
